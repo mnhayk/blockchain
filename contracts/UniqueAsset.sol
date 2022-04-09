@@ -16,8 +16,6 @@ contract UniqueTokens is ERC721Enumerable, Ownable  {
     function mint(address tokenReceiver) external payable {
         require(tokenReceiver != address(0), "UniqueTokens: Invalid receiver address");
         require(msg.value >= cost, "Less than price");
-        (bool success, ) = payable(address(this)).call{value: cost}("");
-        require(success, "Failed to send ETH");
         _safeMint(tokenReceiver, totalSupply() + 1);
     }
 
