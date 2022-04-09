@@ -23,8 +23,8 @@
 // const fs = require('fs');
 // const mnemonic = fs.readFileSync(".secret").toString().trim();
 const HDWalletProvider = require("@truffle/hdwallet-provider");
-const mnemonic = "detail suffer neutral wish rug special hire vapor gentle universe party collect";
-const alchemy = "https://eth-rinkeby.alchemyapi.io/v2/gPoivMYiCXTuEbs3gxh5lDKNs1rjQK1a"
+const mnemonic = process.env.mnemonic
+const alchemy = process.env.alchemy
 
 module.exports = {
   /**
