@@ -22,10 +22,10 @@ contract UniqueTokens is ERC721Enumerable, Ownable  {
         require(msg.value >= cost, "Less than price");
         
         if (freeMintingAmountPerUser[tokenReceiver] < 10) {
-            (bool success, ) = payable(tokenReceiver).call{value: msg.value}("");
+            (bool success, ) = payable(msg.sender).call{value: msg.value}("");
             freeMintingAmountPerUser[tokenReceiver] += 1;
-             require(success, "Failed to Refund ETH");
-             emit Refunded(tokenReceiver, cost);
+            require(success, "Failed to Refund ETH");
+            emit Refunded(tokenReceiver, cost);
         }
         _safeMint(tokenReceiver, totalSupply() + 1);
     }
