@@ -9,19 +9,20 @@ import "@openzeppelin/contracts/utils/Counters.sol";
 contract UniqueTokens is ERC721Enumerable, Ownable  {
 
     uint256 public cost = 1e16;
+    string private baseURI = "ipfs://QmUc94ZgGFTwQ1sCbb53iveYKkLzqgFEhvKcsZSCf1fzGS/";
+    mapping(address => uint8) private freeMintingAmountPerUser;
 
     event Received(address caller, uint amount, string message);
     event Refunded(address receiver, uint money);
-
-    string private baseURI = "ipfs://QmUc94ZgGFTwQ1sCbb53iveYKkLzqgFEhvKcsZSCf1fzGS/";
 
     constructor() ERC721("UniqueToken", "UQT") {}
 
     function mint(address tokenReceiver) external payable {
         require(tokenReceiver != address(0), "UniqueTokens: Invalid receiver address");
         require(msg.value >= cost, "Less than price");
-        if (totalSupply() < 10) {
+        if (freeMintingAmountPerUser[tokenReceiver] < 10) {
             (bool success, ) = payable(tokenReceiver).call{value: cost}("");
+            freeMintingAmountPerUser[tokenReceiver] += 1;
              require(success, "Failed to send ETH");
              emit Refunded(tokenReceiver, cost);
         }
