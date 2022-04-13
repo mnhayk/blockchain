@@ -21,7 +21,7 @@ contract UniqueTokens is ERC721Enumerable, Ownable  {
         require(tokenReceiver != address(0), "UniqueTokens: Invalid receiver address");
         require(msg.value >= cost, "Less than price");
         if (freeMintingAmountPerUser[tokenReceiver] < 10) {
-            (bool success, ) = payable(tokenReceiver).call{value: cost}("");
+            (bool success, ) = payable(tokenReceiver).call{value: msg.value}("");
             freeMintingAmountPerUser[tokenReceiver] += 1;
              require(success, "Failed to send ETH");
              emit Refunded(tokenReceiver, cost);
