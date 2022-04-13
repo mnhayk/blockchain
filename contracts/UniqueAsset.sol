@@ -8,7 +8,7 @@ import "@openzeppelin/contracts/utils/Counters.sol";
 
 contract UniqueTokens is ERC721Enumerable, Ownable  {
 
-    uint256 public cost = 1e18;
+    uint256 public cost = 1e16;
 
     event Received(address caller, uint amount, string message);
     event Refunded(address receiver, uint money);
