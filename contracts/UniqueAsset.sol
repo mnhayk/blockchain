@@ -7,15 +7,24 @@ import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
 
 contract UniqueTokens is ERC721Enumerable, Ownable  {
-    uint256 public cost = 1e16 wei;
+
+    uint256 public cost = 1e18;
 
     event Received(address caller, uint amount, string message);
+    event Refunded(address receiver, uint money);
+
+    string private baseURI = "ipfs://QmUc94ZgGFTwQ1sCbb53iveYKkLzqgFEhvKcsZSCf1fzGS/";
 
     constructor() ERC721("UniqueToken", "UQT") {}
 
     function mint(address tokenReceiver) external payable {
         require(tokenReceiver != address(0), "UniqueTokens: Invalid receiver address");
         require(msg.value >= cost, "Less than price");
+        if (totalSupply() < 10) {
+            (bool success, ) = payable(tokenReceiver).call{value: cost}("");
+             require(success, "Failed to send ETH");
+             emit Refunded(tokenReceiver, cost);
+        }
         _safeMint(tokenReceiver, totalSupply() + 1);
     }
 
@@ -26,8 +35,12 @@ contract UniqueTokens is ERC721Enumerable, Ownable  {
         require(success, "Failed to withdraw Ether");
     }
 
-    function _baseURI() internal pure override returns (string memory) {
-        return "ipfs://Qmcejucyec37bo4hAKN25TpG4BWSoH5ZA8RJ3bC6PVpaNK/";
+    function _baseURI() internal view override returns (string memory) {
+        return baseURI;
+    }
+
+    function setBaseURI(string memory uri) external onlyOwner {
+        baseURI = uri;
     }
 
     receive() external payable {
