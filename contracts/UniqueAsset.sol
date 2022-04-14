@@ -8,26 +8,39 @@ import "@openzeppelin/contracts/utils/Counters.sol";
 
 contract UniqueTokens is ERC721Enumerable, Ownable  {
 
-    uint256 public cost = 1e16;
+    event  Deposit(address sender, uint amount);
+    event Refunded(address sender, uint amount);
+    event Minted(address owner);
+
+    uint256 public TokenPrice = 1e16;
     string private baseURI = "ipfs://QmUc94ZgGFTwQ1sCbb53iveYKkLzqgFEhvKcsZSCf1fzGS/";
     mapping(address => uint8) private freeMintingAmountPerUser;
 
-    event Received(address caller, uint amount, string message);
-    event Refunded(address receiver, uint money);
+    modifier validAddress() {
+        require(msg.sender != address(0), "Not valid address");
+        _;
+    }    
 
     constructor() ERC721("UniqueToken", "UQT") {}
 
-    function mint(address payable tokenReceiver) external payable {
-        require(tokenReceiver != address(0), "UniqueTokens: Invalid receiver address");
-        require(msg.value >= cost, "Less than price");
+    receive() external payable {
+        emit Deposit(msg.sender, msg.value);
+    }
+
+    function mint(address payable sender) external payable validAddress {
+        require(msg.value >= TokenPrice, "Less than price");
         
-        if (freeMintingAmountPerUser[tokenReceiver] < 10) {
+        if (freeMintingAmountPerUser[sender] < 10) {
             (bool success, ) = payable(msg.sender).call{value: msg.value}("");
-            freeMintingAmountPerUser[tokenReceiver] += 1;
+            
             require(success, "Failed to Refund ETH");
-            emit Refunded(tokenReceiver, cost);
+            emit Refunded(sender, TokenPrice);
+
+            freeMintingAmountPerUser[sender] += 1;
         }
-        _safeMint(tokenReceiver, totalSupply() + 1);
+
+        _safeMint(sender, totalSupply() + 1);
+        emit Minted(sender);
     }
 
     function withdraw(uint amount) external onlyOwner {
@@ -44,13 +57,4 @@ contract UniqueTokens is ERC721Enumerable, Ownable  {
     function setBaseURI(string memory uri) external onlyOwner {
         baseURI = uri;
     }
-
-    receive() external payable {
-        emit Received(msg.sender, msg.value, "Receive was called");
-    }
-
-    fallback() external payable {
-        emit Received(msg.sender, msg.value, "Fallback was called");
-    }
-
 }
