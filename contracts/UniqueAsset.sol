@@ -14,7 +14,7 @@ contract UniqueTokens is ERC721Enumerable, Ownable, ReentrancyGuard  {
     uint256 public _tokenPrice = 1e16;
     string private _tokenBaseURI = "ipfs://QmUc94ZgGFTwQ1sCbb53iveYKkLzqgFEhvKcsZSCf1fzGS/";
 
-    mapping(address => uint8) private freeMintingAmountPerUser;
+    mapping(address => uint8) private _freeMintingAmountPerUser;
 
     constructor() ERC721("UniqueToken", "UQT") {}
 
@@ -25,13 +25,13 @@ contract UniqueTokens is ERC721Enumerable, Ownable, ReentrancyGuard  {
     function mint() external payable nonReentrant {
         require(msg.value >= _tokenPrice, "Less than price");
         
-        if (freeMintingAmountPerUser[msg.sender] < 10) {
+        if (_freeMintingAmountPerUser[msg.sender] < 10) {
             (bool success, ) = payable(msg.sender).call{value: msg.value}("");
 
             require(success, "Failed to Refund ETH");
             emit Refunded(msg.sender, _tokenPrice);
 
-            freeMintingAmountPerUser[msg.sender] += 1;
+            _freeMintingAmountPerUser[msg.sender] += 1;
         }
 
         _safeMint(msg.sender, totalSupply() + 1);
