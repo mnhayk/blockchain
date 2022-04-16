@@ -4,22 +4,17 @@ pragma solidity ^0.8.10;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
-import "@openzeppelin/contracts/utils/Counters.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
-contract UniqueTokens is ERC721Enumerable, Ownable  {
+contract UniqueTokens is ERC721Enumerable, Ownable, ReentrancyGuard  {
 
     event  Deposit(address sender, uint amount);
     event Refunded(address sender, uint amount);
-    event Minted(address owner);
 
-    uint256 public TokenPrice = 1e16;
-    string private baseURI = "ipfs://QmUc94ZgGFTwQ1sCbb53iveYKkLzqgFEhvKcsZSCf1fzGS/";
+    uint256 public _tokenPrice = 1e16;
+    string private _tokenBaseURI = "ipfs://QmUc94ZgGFTwQ1sCbb53iveYKkLzqgFEhvKcsZSCf1fzGS/";
+
     mapping(address => uint8) private freeMintingAmountPerUser;
-
-    modifier validAddress() {
-        require(msg.sender != address(0), "Not valid address");
-        _;
-    }    
 
     constructor() ERC721("UniqueToken", "UQT") {}
 
@@ -27,20 +22,19 @@ contract UniqueTokens is ERC721Enumerable, Ownable  {
         emit Deposit(msg.sender, msg.value);
     }
 
-    function mint(address payable sender) external payable validAddress {
-        require(msg.value >= TokenPrice, "Less than price");
+    function mint() external payable nonReentrant {
+        require(msg.value >= _tokenPrice, "Less than price");
         
-        if (freeMintingAmountPerUser[sender] < 10) {
+        if (freeMintingAmountPerUser[msg.sender] < 10) {
             (bool success, ) = payable(msg.sender).call{value: msg.value}("");
-            
-            require(success, "Failed to Refund ETH");
-            emit Refunded(sender, TokenPrice);
 
-            freeMintingAmountPerUser[sender] += 1;
+            require(success, "Failed to Refund ETH");
+            emit Refunded(msg.sender, _tokenPrice);
+
+            freeMintingAmountPerUser[msg.sender] += 1;
         }
 
-        _safeMint(sender, totalSupply() + 1);
-        emit Minted(sender);
+        _safeMint(msg.sender, totalSupply() + 1);
     }
 
     function withdraw(uint amount) external onlyOwner {
@@ -51,10 +45,10 @@ contract UniqueTokens is ERC721Enumerable, Ownable  {
     }
 
     function _baseURI() internal view override returns (string memory) {
-        return baseURI;
+        return _tokenBaseURI;
     }
 
-    function setBaseURI(string memory uri) external onlyOwner {
-        baseURI = uri;
+    function setBaseURI(string memory tokenBaseURI) external onlyOwner {
+        _tokenBaseURI = tokenBaseURI;
     }
 }
