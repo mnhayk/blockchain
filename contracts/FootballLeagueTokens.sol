@@ -4,7 +4,6 @@ pragma solidity ^0.8.10;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 contract FootballLeagueTokens is ERC1155, Ownable  {
 
