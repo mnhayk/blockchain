@@ -10,9 +10,7 @@ contract FootballLeagueTokens is ERC1155, Ownable  {
 
     event Received(address caller, uint amount, string message);
 
-    mapping (uint8 => uint16) private _tokenAmountPerId;
     uint16 private _maxAmountOfEachToken = 1000;
-    
     uint8[] public tokenIds = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
     uint public tokenPriceWithEthereum = 1e16;
     
@@ -23,16 +21,17 @@ contract FootballLeagueTokens is ERC1155, Ownable  {
     }
 
     function mintETH(uint8 tokenId, uint16 amount) external payable {
-        require(msg.value >= tokenPriceWithEthereum, "Not enough money");
+        require(msg.value >= tokenPriceWithEthereum * amount, "Not enough money");
         require(tokenId < tokenIds.length, "Token doesn't exist");
-        require(_tokenAmountPerId[tokenId] < _maxAmountOfEachToken, "There is no such amount of tokens");
+        require(balanceOf(msg.sender, tokenId) + amount <= _maxAmountOfEachToken, "There is no such amount of tokens");
         
-        uint[] memory ids = new uint[](tokenId);
-        uint[] memory amounts = new uint[](amount);
+        uint[] memory ids = new uint[](1);
+        ids[0] = tokenId;
+
+        uint[] memory amounts = new uint[](1);
+        amounts[0] = amount;
 
         _mintBatch(msg.sender, ids, amounts, "");
-        _tokenAmountPerId[tokenId] += amount;
-
     }
 
     function withdraw(uint amount) external onlyOwner {
