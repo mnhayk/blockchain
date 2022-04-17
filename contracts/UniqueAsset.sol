@@ -4,19 +4,37 @@ pragma solidity ^0.8.10;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
-import "@openzeppelin/contracts/utils/Counters.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
-contract UniqueTokens is ERC721Enumerable, Ownable  {
-    uint256 public cost = 1e16 wei;
+contract UniqueTokens is ERC721Enumerable, Ownable, ReentrancyGuard  {
 
-    event Received(address caller, uint amount, string message);
+    event  Deposit(address sender, uint amount);
+    event Refunded(address sender, uint amount);
+
+    uint256 public tokenPrice = 1e16;
+    string private _tokenBaseURI = "ipfs://QmUc94ZgGFTwQ1sCbb53iveYKkLzqgFEhvKcsZSCf1fzGS/";
+
+    mapping(address => uint8) private _freeMintingAmountPerUser;
 
     constructor() ERC721("UniqueToken", "UQT") {}
 
-    function mint(address tokenReceiver) external payable {
-        require(tokenReceiver != address(0), "UniqueTokens: Invalid receiver address");
-        require(msg.value >= cost, "Less than price");
-        _safeMint(tokenReceiver, totalSupply() + 1);
+    receive() external payable {
+        emit Deposit(msg.sender, msg.value);
+    }
+
+    function mint() external payable nonReentrant {
+        require(msg.value >= tokenPrice, "Less than price");
+        
+        if (_freeMintingAmountPerUser[msg.sender] < 10) {
+            (bool success, ) = payable(msg.sender).call{value: msg.value}("");
+
+            require(success, "Failed to Refund ETH");
+            emit Refunded(msg.sender, tokenPrice);
+
+            _freeMintingAmountPerUser[msg.sender] += 1;
+        }
+
+        _safeMint(msg.sender, totalSupply() + 1);
     }
 
     function withdraw(uint amount) external onlyOwner {
@@ -26,16 +44,11 @@ contract UniqueTokens is ERC721Enumerable, Ownable  {
         require(success, "Failed to withdraw Ether");
     }
 
-    function _baseURI() internal pure override returns (string memory) {
-        return "ipfs://Qmcejucyec37bo4hAKN25TpG4BWSoH5ZA8RJ3bC6PVpaNK/";
+    function _baseURI() internal view override returns (string memory) {
+        return _tokenBaseURI;
     }
 
-    receive() external payable {
-        emit Received(msg.sender, msg.value, "Receive was called");
+    function setBaseURI(string memory tokenBaseURI) external onlyOwner {
+        _tokenBaseURI = tokenBaseURI;
     }
-
-    fallback() external payable {
-        emit Received(msg.sender, msg.value, "Fallback was called");
-    }
-
 }
