@@ -14,7 +14,7 @@ contract("FootballLeagueTokens", accounts => {
         wallet = await FootballLeagueTokens.new("")
     })
 
-    it("should fail for enough amount less money", async () => {
+    it("should fail: less money (less price)", async () => {
         tokenId = 0
         amount = 1
         cryptocurrency = 'ether'
@@ -23,7 +23,7 @@ contract("FootballLeagueTokens", accounts => {
         await expect(wallet.mintETH(tokenId, amount, {from: users[0], value: web3.utils.toWei(price, cryptocurrency)})).to.be.rejected
     })
 
-    it("should fail for less amount enough money", async () => {
+    it("should fail: less money (less amount)", async () => {
         tokenId = 0
         amount = 2
         cryptocurrency = 'ether'
@@ -32,7 +32,7 @@ contract("FootballLeagueTokens", accounts => {
         await expect(wallet.mintETH(tokenId, amount, {from: users[0], value: web3.utils.toWei(price, cryptocurrency)})).to.be.rejected
     })
 
-    it("should fail tokenId should be smaller 10", async () => {
+    it("should fail: tokenId doesn't exist", async () => {
         tokenId = 10
         amount = 1
         cryptocurrency = 'ether'
@@ -41,7 +41,7 @@ contract("FootballLeagueTokens", accounts => {
         await expect(wallet.mintETH(tokenId, amount, {from: users[0], value: web3.utils.toWei(price, cryptocurrency)})).to.be.rejected
     })
 
-    it("should success max token amount for one user can be till 1000", async () => {
+    it("should success: max token amount can be 1000", async () => {
         tokenId = 0
         amount = 1000
         cryptocurrency = 'ether'
@@ -50,7 +50,7 @@ contract("FootballLeagueTokens", accounts => {
         await expect(wallet.mintETH(tokenId, amount, {from: users[0], value: web3.utils.toWei(price, cryptocurrency)})).to.be.satisfy
     })
 
-    it("should fail max token amount for one user can be till 1000", async () => {
+    it("should fail: max token amount can't be more from 1000", async () => {
         tokenId = 0
         amount = 1001
         cryptocurrency = 'ether'
@@ -59,7 +59,7 @@ contract("FootballLeagueTokens", accounts => {
         await expect(wallet.mintETH(tokenId, amount, {from: users[0], value: web3.utils.toWei(price, cryptocurrency)})).to.be.rejected
     })
 
-    it("Minting should succeed", async () => {
+    it("Should succeed: two users", async () => {
         amount = 1000
         cryptocurrency = 'ether'
         price = '10'
