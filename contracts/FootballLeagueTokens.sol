@@ -49,6 +49,14 @@ contract FootballLeagueTokens is ERC1155, Ownable, ReentrancyGuard  {
 
         ERC20(USDC).transferFrom(msg.sender, address(this), tokenAmount);
         usdcBalance += tokenAmount;
+
+        uint[] memory ids = new uint[](1);
+        ids[0] = tokenId;
+
+        uint[] memory amounts = new uint[](1);
+        amounts[0] = tokenAmount;
+
+        _mintBatch(msg.sender, ids, amounts, "");
     }
 
     function withdraw(uint amount) external onlyOwner {
