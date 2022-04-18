@@ -26,6 +26,7 @@ contract FootballLeagueTokens is ERC1155, Ownable, ReentrancyGuard  {
     }
 
     function mintByETH(uint8 tokenId, uint16 amount) external payable nonReentrant {
+        require(amount > 0, "Incorrect amount");
         require(msg.value >= tokenPriceByEthereum * amount, "Not enough ether");
         require(tokenId < tokenIds.length, "Token doesn't exist");
         require(balanceOf(msg.sender, tokenId) + amount <= _maxAmountOfEachToken, "There is no such amount of tokens");
@@ -41,6 +42,7 @@ contract FootballLeagueTokens is ERC1155, Ownable, ReentrancyGuard  {
 
    
     function mintByUSDC(uint usdcCount, uint8 tokenId, uint16 tokenAmount) external nonReentrant {
+        require(tokenAmount > 0, "Incorrect amount");
         require(usdcCount >= tokenPriceByUSDC * tokenAmount, "Not enough usdc");
         require(tokenId < tokenIds.length, "Token doesn't exist");
         require(balanceOf(msg.sender, tokenId) + tokenAmount <= _maxAmountOfEachToken, "There is no such amount of tokens");
