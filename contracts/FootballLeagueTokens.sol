@@ -45,7 +45,7 @@ contract FootballLeagueTokens is ERC1155Supply, Ownable, ReentrancyGuard  {
         require(tokenAmount > 0, "Incorrect amount");
         require(usdcCount >= tokenPriceByUSDC * tokenAmount, "Not enough usdc");
         require(tokenId < tokenIds.length, "Token doesn't exist");
-        require(balanceOf(msg.sender, tokenId) + tokenAmount <= _maxAmountOfEachToken, "There is no such amount of tokens");
+        require(totalSupply(tokenId) + tokenAmount <= 1000, "There is no such amount of tokens");
 
         ERC20(USDC).transferFrom(msg.sender, address(this), tokenAmount);
         usdcBalance += tokenAmount;
