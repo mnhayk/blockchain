@@ -6,7 +6,6 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import '@uniswap/v3-periphery/contracts/libraries/TransferHelper.sol';
 
 contract FootballLeagueTokens is ERC1155, Ownable, ReentrancyGuard  {
 
@@ -18,7 +17,7 @@ contract FootballLeagueTokens is ERC1155, Ownable, ReentrancyGuard  {
     uint8[] public tokenIds = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
     uint public tokenPriceByEthereum = 1e16;
     uint public tokenPriceByUSDC = 30;
-    mapping(address => uint) public usdcBalance;
+    uint public usdcBalance;
     
     constructor(string memory uri) ERC1155(uri) {}
 
@@ -47,7 +46,7 @@ contract FootballLeagueTokens is ERC1155, Ownable, ReentrancyGuard  {
         require(balanceOf(msg.sender, tokenId) + tokenAmount <= _maxAmountOfEachToken, "There is no such amount of tokens");
 
         ERC20(USDC).transferFrom(msg.sender, address(this), tokenAmount);
-        usdcBalance[msg.sender] = usdcBalance[msg.sender] + tokenAmount;
+        usdcBalance += tokenAmount;
     }
 
     function withdraw(uint amount) external onlyOwner {
