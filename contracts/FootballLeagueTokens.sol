@@ -4,10 +4,10 @@ pragma solidity ^0.8.10;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
-import "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
+import "@openzeppelin/contracts/token/ERC1155/extensions/ERC1155Supply.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
-contract FootballLeagueTokens is ERC1155, Ownable, ReentrancyGuard  {
+contract FootballLeagueTokens is ERC1155Supply, Ownable, ReentrancyGuard  {
 
     event Received(address caller, uint amount, string message);
 
@@ -29,7 +29,7 @@ contract FootballLeagueTokens is ERC1155, Ownable, ReentrancyGuard  {
         require(amount > 0, "Incorrect amount");
         require(msg.value >= tokenPriceByEthereum * amount, "Not enough ether");
         require(tokenId < tokenIds.length, "Token doesn't exist");
-        require(balanceOf(msg.sender, tokenId) + amount <= _maxAmountOfEachToken, "There is no such amount of tokens");
+        require(totalSupply(tokenId) + amount <= 1000, "There is no such amount of tokens");
         
         uint[] memory ids = new uint[](1);
         ids[0] = tokenId;
