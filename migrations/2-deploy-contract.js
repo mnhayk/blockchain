@@ -1,4 +1,4 @@
-var UniqueAsset = artifacts.require("UniqueAsset");
+var FootballLeagueTokens = artifacts.require("FootballLeagueTokens");
 module.exports = function(deployer) {
-  deployer.deploy(UniqueAsset);
+  deployer.deploy(FootballLeagueTokens, "");
 };
