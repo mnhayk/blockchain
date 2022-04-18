@@ -59,10 +59,18 @@ contract FootballLeagueTokens is ERC1155, Ownable, ReentrancyGuard  {
         _mintBatch(msg.sender, ids, amounts, "");
     }
 
-    function withdraw(uint amount) external onlyOwner {
+    function withdrawETH(uint amount) external onlyOwner {
         uint currentBalance = address(this).balance;
-        require(amount  <= currentBalance, "Not enough money");
+        require(amount  <= currentBalance, "Not enough ether");
         (bool success, ) = owner().call {value: amount}("");
         require(success, "Failed to withdraw Ether");
+    }
+
+    function withdrawUSDC(uint amount) external onlyOwner {
+        require(amount > 0, "Invalid amount");
+        require(amount <= usdcBalance, "Not enough usdc");
+
+        ERC20(USDC).transferFrom(address(this), msg.sender, amount);
+        usdcBalance -= amount;
     }
 }
