@@ -11,7 +11,7 @@ contract FootballLeagueTokens is ERC1155Supply, Ownable, ReentrancyGuard  {
 
     event Received(address caller, uint amount, string message);
 
-    address public constant USDC = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
+    address public constant USDC = 0x6830707Ba5C9632c44Cf78dCbc172c09788b047b;
 
     uint16 private _maxAmountOfEachToken = 1000;
     uint8[] public tokenIds = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
@@ -47,7 +47,9 @@ contract FootballLeagueTokens is ERC1155Supply, Ownable, ReentrancyGuard  {
         require(tokenId < tokenIds.length, "Token doesn't exist");
         require(totalSupply(tokenId) + tokenAmount <= 1000, "There is no such amount of tokens");
 
-        ERC20(USDC).transferFrom(msg.sender, address(this), tokenAmount);
+        bool success = ERC20(USDC).transferFrom(msg.sender, address(this), tokenAmount);
+
+        require(success, "USDC transfer failed");
         usdcBalance += tokenAmount;
 
         uint[] memory ids = new uint[](1);
