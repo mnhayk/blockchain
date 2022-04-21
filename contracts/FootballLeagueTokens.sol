@@ -11,7 +11,7 @@ contract FootballLeagueTokens is ERC1155Supply, Ownable, ReentrancyGuard  {
 
     event Received(address caller, uint amount, string message);
 
-    address public constant USDC = 0x6830707Ba5C9632c44Cf78dCbc172c09788b047b;
+    address public constant USDC = 0x2673C1Ec91e8cE64bE73248706Bf8db0475d46C2;
 
     uint16 private _maxAmountOfEachToken = 1000;
     uint8[] public tokenIds = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
@@ -25,7 +25,7 @@ contract FootballLeagueTokens is ERC1155Supply, Ownable, ReentrancyGuard  {
         emit Received(msg.sender, msg.value, "Contract get money");
     }
 
-    function mintByETH(uint8 tokenId, uint16 amount) external payable nonReentrant {
+    function mintByETH(uint tokenId, uint amount) external payable nonReentrant {
         require(amount > 0, "Incorrect amount");
         require(msg.value >= tokenPriceByEthereum * amount, "Not enough ether");
         require(tokenId < tokenIds.length, "Token doesn't exist");
@@ -41,13 +41,16 @@ contract FootballLeagueTokens is ERC1155Supply, Ownable, ReentrancyGuard  {
     }
 
    
-    function mintByUSDC(uint usdcCount, uint8 tokenId, uint16 tokenAmount) external nonReentrant {
+    function mintByUSDC(uint usdcCount, uint tokenId, uint tokenAmount) external nonReentrant {
         require(tokenAmount > 0, "Incorrect amount");
         require(usdcCount >= tokenPriceByUSDC * tokenAmount, "Not enough usdc");
         require(tokenId < tokenIds.length, "Token doesn't exist");
         require(totalSupply(tokenId) + tokenAmount <= 1000, "There is no such amount of tokens");
 
-        bool success = ERC20(USDC).transferFrom(msg.sender, address(this), tokenAmount);
+        uint senderUSDCBalance = ERC20(USDC).balanceOf(msg.sender);
+        require(usdcCount <= senderUSDCBalance, "USDC balance is low");
+
+        bool success = ERC20(USDC).transferFrom(msg.sender, address(this), usdcCount);
 
         require(success, "USDC transfer failed");
         usdcBalance += tokenAmount;
