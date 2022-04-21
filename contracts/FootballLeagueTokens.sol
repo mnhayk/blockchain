@@ -37,6 +37,7 @@ contract FootballLeagueTokens is ERC1155Supply, Ownable, ReentrancyGuard  {
         amounts[0] = amount;
 
         _mintBatch(msg.sender, ids, amounts, "");
+
     }
 
    
