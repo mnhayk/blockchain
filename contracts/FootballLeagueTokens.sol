@@ -17,7 +17,6 @@ contract FootballLeagueTokens is ERC1155Supply, Ownable, ReentrancyGuard  {
     uint8[] public tokenIds = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
     uint public tokenPriceByEthereum = 1e16;
     uint public tokenPriceByUSDC = 30;
-    uint public usdcBalance;
     
     constructor(string memory uri) ERC1155(uri) {}
 
@@ -51,9 +50,7 @@ contract FootballLeagueTokens is ERC1155Supply, Ownable, ReentrancyGuard  {
         require(usdcCount <= senderUSDCBalance, "USDC balance is low");
 
         bool success = ERC20(USDC).transferFrom(msg.sender, address(this), usdcCount);
-
         require(success, "USDC transfer failed");
-        usdcBalance += tokenAmount;
 
         uint[] memory ids = new uint[](1);
         ids[0] = tokenId;
@@ -73,9 +70,9 @@ contract FootballLeagueTokens is ERC1155Supply, Ownable, ReentrancyGuard  {
 
     function withdrawUSDC(uint amount) external onlyOwner {
         require(amount > 0, "Invalid amount");
-        require(amount <= usdcBalance, "Not enough usdc");
+        require(amount <= ERC20(USDC).balanceOf(address(this)), "Not enough usdc");
 
-        ERC20(USDC).transferFrom(address(this), msg.sender, amount);
-        usdcBalance -= amount;
+        bool success = ERC20(USDC).transferFrom(address(this), msg.sender, amount);
+        require(success, "Failed to withdraw USDC");
     }
 }
