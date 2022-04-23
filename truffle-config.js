@@ -22,9 +22,12 @@
 //
 // const fs = require('fs');
 // const mnemonic = fs.readFileSync(".secret").toString().trim();
+require('dotenv').config()
+
 const HDWalletProvider = require("@truffle/hdwallet-provider");
-const mnemonic = process.env.mnemonic
-const alchemy = process.env.alchemy
+
+const MNEMONIC = process.env.MNEMONIC
+const ALCHEMY = process.env.ALCHEMY
 
 module.exports = {
   /**
@@ -44,10 +47,10 @@ module.exports = {
     },
     rinkeby: {
       provider: function() { 
-        return new HDWalletProvider(mnemonic, alchemy);
+        return new HDWalletProvider(MNEMONIC, ALCHEMY);
        },
       network_id: 4,
-      confirmations: 2,
+      confirmations: 1,
       timeoutBlocks: 200,
       skipDryRun: true,
     },
