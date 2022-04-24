@@ -2,6 +2,6 @@ bin/contracts/
 build/
 flattened/
 node_modules/
-.env*
+.env
 *.DS_Store
 

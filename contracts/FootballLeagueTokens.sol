@@ -8,17 +8,28 @@ import "@openzeppelin/contracts/token/ERC1155/extensions/ERC1155Supply.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 contract FootballLeagueTokens is ERC1155Supply, Ownable, ReentrancyGuard  {
+    
+    uint private _maxTokenId;
+    uint private _maxAmountOfEachToken;
+    uint public tokenPriceByWei;
+    uint public tokenPriceByUSDC;
+    ERC20 public USDCTokenAddress;
 
     event Received(address caller, uint amount, string message);
 
-    address public constant USDC = 0x2673C1Ec91e8cE64bE73248706Bf8db0475d46C2;
-
-    uint16 private _maxAmountOfEachToken = 1000;
-    uint8[] public tokenIds = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
-    uint public tokenPriceByEthereum = 1e16;
-    uint public tokenPriceByUSDC = 30;
-    
-    constructor(string memory uri) ERC1155(uri) {}
+    constructor(uint maxTokenId, 
+                uint maxAmountOfEachToken,
+                uint _tokenPriceByWei, 
+                uint _tokenPriceByUSDC, 
+                ERC20 _USDCTokenAddress,
+                string memory uri) ERC1155(uri) {
+                    
+        _maxTokenId = maxTokenId;
+        _maxAmountOfEachToken = maxAmountOfEachToken;
+        tokenPriceByWei = _tokenPriceByWei;
+        tokenPriceByUSDC = _tokenPriceByUSDC;
+        USDCTokenAddress = _USDCTokenAddress;
+    }
 
     receive() external payable {
         emit Received(msg.sender, msg.value, "Contract get money");
@@ -26,54 +37,34 @@ contract FootballLeagueTokens is ERC1155Supply, Ownable, ReentrancyGuard  {
 
     function mintByETH(uint tokenId, uint amount) external payable nonReentrant {
         require(amount > 0, "Incorrect amount");
-        require(msg.value >= tokenPriceByEthereum * amount, "Not enough ether");
-        require(tokenId < tokenIds.length, "Token doesn't exist");
-        require(totalSupply(tokenId) + amount <= 1000, "There is no such amount of tokens");
-        
-        uint[] memory ids = new uint[](1);
-        ids[0] = tokenId;
+        require(msg.value >= tokenPriceByWei * amount, "Not enough ether");
+        require(tokenId <= _maxTokenId, "tokenId should be smaller from 10");
+        require(totalSupply(tokenId) + amount <= _maxAmountOfEachToken, "Generating Token Amount is exceeded");
 
-        uint[] memory amounts = new uint[](1);
-        amounts[0] = amount;
-
-        _mintBatch(msg.sender, ids, amounts, "");
+        _mint(msg.sender, tokenId, amount, "");
 
     }
 
-   
-    function mintByUSDC(uint usdcCount, uint tokenId, uint tokenAmount) external nonReentrant {
-        require(tokenAmount > 0, "Incorrect amount");
-        require(usdcCount >= tokenPriceByUSDC * tokenAmount, "Not enough usdc");
-        require(tokenId < tokenIds.length, "Token doesn't exist");
-        require(totalSupply(tokenId) + tokenAmount <= 1000, "There is no such amount of tokens");
+    function mintByUSDC(uint tokenId, uint amount) external nonReentrant {
+        require(amount > 0, "Incorrect amount");
+        require(tokenId <= _maxTokenId, "Incorrect tokenId");
+        require(totalSupply(tokenId) + amount <= _maxAmountOfEachToken, "Generating Token Amount is exceeded");
 
-        uint senderUSDCBalance = ERC20(USDC).balanceOf(msg.sender);
-        require(usdcCount <= senderUSDCBalance, "USDC balance is low");
-
-        bool success = ERC20(USDC).transferFrom(msg.sender, address(this), usdcCount);
+        bool success = USDCTokenAddress.transferFrom(msg.sender, address(this), tokenPriceByUSDC * amount);
         require(success, "USDC transfer failed");
 
-        uint[] memory ids = new uint[](1);
-        ids[0] = tokenId;
-
-        uint[] memory amounts = new uint[](1);
-        amounts[0] = tokenAmount;
-
-        _mintBatch(msg.sender, ids, amounts, "");
+        _mint(msg.sender, tokenId, amount, "");
     }
 
     function withdrawETH(uint amount) external onlyOwner {
-        uint currentBalance = address(this).balance;
-        require(amount  <= currentBalance, "Not enough ether");
+        require(amount <= address(this).balance, "Not enough ether");
         (bool success, ) = owner().call {value: amount}("");
         require(success, "Failed to withdraw Ether");
     }
 
     function withdrawUSDC(uint amount) external onlyOwner {
         require(amount > 0, "Invalid amount");
-        require(amount <= ERC20(USDC).balanceOf(address(this)), "Not enough usdc");
-
-        bool success = ERC20(USDC).transferFrom(address(this), msg.sender, amount);
+        bool success = USDCTokenAddress.transferFrom(address(this), msg.sender, amount);
         require(success, "Failed to withdraw USDC");
     }
 }
