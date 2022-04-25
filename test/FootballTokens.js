@@ -2,6 +2,7 @@ const FootballTokens = artifacts.require("FootballTokens")
 const USDCMock = artifacts.require("USDCMock")
 
 const { expectRevert, expectEvent, constants } = require('@openzeppelin/test-helpers');
+const { inTransaction } = require('@openzeppelin/test-helpers/src/expectEvent');
 const { web3 } = require('@openzeppelin/test-helpers/src/setup');
 const { assert, expect } = require('chai');
 
@@ -15,6 +16,8 @@ contract("FootballTokens", accounts => {
     let tokenPriceByPaymentToken = 30e18 //30 usdc
     let metadataURI = "MockURI"
 
+    let owner = accounts[0]
+
     let deployed
     let usdcMock
 
@@ -25,19 +28,19 @@ contract("FootballTokens", accounts => {
             tokenPriceByWei.toString(),
             tokenPriceByPaymentToken.toString(),
             usdcMock.address,
-            metadataURI)
+            metadataURI, { from: owner })
     })
 
     describe('mintByETH', async () => {
 
         it("should success with correct token id", async () => {
-            let firstUser = accounts[0]
+            let firstUser = accounts[1]
             await deployed.mintByETH(maxTokenId, 1, { from: firstUser, value: tokenPriceByWei })
 
             let balanceOfFirstUser = await deployed.balanceOf(firstUser, maxTokenId);
             assert.equal(balanceOfFirstUser.toString(), '1');
 
-            let secondUser = accounts[1]
+            let secondUser = accounts[2]
             await deployed.mintByETH(maxTokenId, 10, { from: secondUser, value: tokenPriceByWei * 10 })
 
             let balanceOfSecondUser = await deployed.balanceOf(secondUser, maxTokenId);
@@ -82,14 +85,14 @@ contract("FootballTokens", accounts => {
 
         it("should faill with incorrect token id", async () => {
             await expectRevert(
-                deployed.mintByETH(maxTokenId + 1, 1, { from: accounts[0], value: tokenPriceByWei }),
+                deployed.mintByETH(maxTokenId + 1, 1, { from: accounts[1], value: tokenPriceByWei }),
                 'Incorrect tokenId'    
             );
         })
 
         it("should faill not enough ether", async () => {
             await expectRevert(
-                deployed.mintByETH(0, 1, { from: accounts[0], value: 1e15 }),
+                deployed.mintByETH(0, 1, { from: accounts[2], value: 1e15 }),
                 'Not enough ether'    
             );
         })
@@ -97,7 +100,7 @@ contract("FootballTokens", accounts => {
 
     describe('mintByPaymentToken', async () => {
         it("should success with correct token id and usdcAmount", async () => {
-            let user = accounts[0]
+            let user = accounts[3]
             let usdcAmount = toBN(900e18) //900 usdc
 
             await usdcMock.mint(usdcAmount, { from: user })
@@ -147,10 +150,46 @@ contract("FootballTokens", accounts => {
         })
     });
 
-    //TODO
     // describe('withdrawETH', async () => {
     // });
 
-    // describe('withdrawPaymentToken', async () => {
-    // });
+    describe('withdrawPaymentToken', async () => {
+        it("should succeed to withdraw usdc", async () => {
+
+            let user = accounts[1]
+            let usdcAmount = toBN(900e18) //900 usdc
+
+            await usdcMock.mint(usdcAmount, { from: user })
+            await usdcMock.approve(deployed.address, usdcAmount, { from: user })
+
+            await deployed.mintByPaymentToken(maxTokenId, 30, { from: user })
+
+            var balanceOfContract = await usdcMock.balanceOf(deployed.address)
+            assert.equal(balanceOfContract.toString(), 900e18.toString())
+
+            await deployed.withdrawPaymentToken(usdcMock.address, usdcAmount, { from: owner })
+
+            var balanceOfContractAfter = await usdcMock.balanceOf(deployed.address)
+            assert.equal(balanceOfContractAfter.toString(), '0')
+
+            var balanceOfOwner = await usdcMock.balanceOf(owner)
+            assert.equal(balanceOfOwner.toString(), usdcAmount.toString())
+
+        })
+
+        it("should fail for not owner to withdraw usdc", async () => {
+
+            let user = accounts[1]
+            let usdcAmount = toBN(900e18) //900 usdc
+
+            await usdcMock.mint(usdcAmount, { from: user })
+            await usdcMock.approve(deployed.address, usdcAmount, { from: user })
+            await deployed.mintByPaymentToken(maxTokenId, 30, { from: user })
+
+            expectRevert( 
+                deployed.withdrawPaymentToken(usdcMock.address, usdcAmount, { from: user }),
+                'caller is not the owner'
+            )
+        })
+    });
 })
