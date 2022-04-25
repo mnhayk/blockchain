@@ -43,6 +43,16 @@ module.exports = {
    plugins: ['truffle-plugin-verify'],
    networks: {
     development: {
+      live: {
+        provider: function() { 
+          return new HDWalletProvider(MNEMONIC, ALCHEMY);
+         },
+        network_id: 1,
+        confirmations: 2,
+        timeoutBlocks: 200,
+        skipDryRun: true,
+      },
+
       host: '127.0.0.1', // Localhost (default: none)
       port: 7545, // Standard Ethereum port (default: none)
       network_id: '*', // Any network (default: none)
