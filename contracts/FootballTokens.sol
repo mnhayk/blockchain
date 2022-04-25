@@ -61,6 +61,7 @@ contract FootballTokens is ERC1155Supply, Ownable, ReentrancyGuard  {
     }
 
     function withdrawPaymentToken(address tokenAddress, uint amount) external onlyOwner {
+        IERC20(tokenAddress).approve(address(this), amount);
         bool success = IERC20(tokenAddress).transferFrom(address(this), msg.sender, amount);
         require(success, "Failed to withdraw PaymentToken");
     }
