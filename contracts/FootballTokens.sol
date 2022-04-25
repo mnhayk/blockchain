@@ -7,7 +7,7 @@ import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/token/ERC1155/extensions/ERC1155Supply.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-contract FootballLeagueTokens is ERC1155Supply, Ownable, ReentrancyGuard  {
+contract FootballTokens is ERC1155Supply, Ownable, ReentrancyGuard  {
     
     uint32 public maxTokenId;
     uint32 public maxAmountOfEachToken;
