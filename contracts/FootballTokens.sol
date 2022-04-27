@@ -9,16 +9,16 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 contract FootballTokens is ERC1155Supply, Ownable, ReentrancyGuard  {
     
-    uint32 public maxTokenId;
-    uint32 public maxAmountOfEachToken;
+    uint128 public maxTokenId; 
+    uint128 public maxAmountOfEachToken;
     uint public tokenPriceByWei;
     uint public tokenPriceByPaymentToken;
     address public paymentTokenAddress;
 
     event Received(address caller, uint amount, string message);
 
-    constructor(uint32 _maxTokenId, 
-                uint32 _maxAmountOfEachToken,
+    constructor(uint128 _maxTokenId, 
+                uint128 _maxAmountOfEachToken,
                 uint _tokenPriceByWei, 
                 uint _tokenPriceByPaymentToken, 
                 address _paymentTokenAddress,
@@ -48,8 +48,7 @@ contract FootballTokens is ERC1155Supply, Ownable, ReentrancyGuard  {
         require(tokenId <= maxTokenId, "Incorrect tokenId");
         require(totalSupply(tokenId) + amount <= maxAmountOfEachToken, "Max supply is exceeded");
 
-        bool success = IERC20(paymentTokenAddress).transferFrom(msg.sender, address(this), tokenPriceByPaymentToken * amount);
-        require(success, "Payment Token transfer failed");
+        IERC20(paymentTokenAddress).transferFrom(msg.sender, address(this), tokenPriceByPaymentToken * amount);
 
         _mint(msg.sender, tokenId, amount, "");
     }
@@ -61,8 +60,6 @@ contract FootballTokens is ERC1155Supply, Ownable, ReentrancyGuard  {
     }
 
     function withdrawPaymentToken(address tokenAddress, uint amount) external onlyOwner {
-        IERC20(tokenAddress).approve(address(this), amount);
-        bool success = IERC20(tokenAddress).transferFrom(address(this), msg.sender, amount);
-        require(success, "Failed to withdraw PaymentToken");
+        IERC20(tokenAddress).transfer(msg.sender, amount);
     }
 }

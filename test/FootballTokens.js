@@ -2,21 +2,20 @@ const FootballTokens = artifacts.require("FootballTokens")
 const USDCMock = artifacts.require("USDCMock")
 
 const { expectRevert, expectEvent, constants } = require('@openzeppelin/test-helpers');
-const { inTransaction } = require('@openzeppelin/test-helpers/src/expectEvent');
 const { web3 } = require('@openzeppelin/test-helpers/src/setup');
-const { assert, expect } = require('chai');
+const { assert } = require('chai');
 
 const toBN = web3.utils.toBN;
 
 contract("FootballTokens", accounts => {
 
-    let maxTokenId = 9
-    let maxAmountOfEachToken = 1000
-    let tokenPriceByWei = 1e16  //0.01 eth
-    let tokenPriceByPaymentToken = 30e18 //30 usdc
-    let metadataURI = "MockURI"
+    const maxTokenId = 9
+    const maxAmountOfEachToken = 1000
+    const tokenPriceByWei = web3.utils.toWei('0.01', 'ether')
+    const tokenPriceByPaymentToken = 30e18 //30 usdc
+    const metadataURI = "MockURI"
 
-    let owner = accounts[0]
+    const owner = accounts[0]
 
     let deployed
     let usdcMock
@@ -34,29 +33,52 @@ contract("FootballTokens", accounts => {
     describe('mintByETH', async () => {
 
         it("should success with correct token id", async () => {
-            let firstUser = accounts[1]
-            await deployed.mintByETH(maxTokenId, 1, { from: firstUser, value: tokenPriceByWei })
+            const userOne = accounts[1]
+            const amountOfUserOneTokens = 1
+            const receiptOne = await deployed.mintByETH(maxTokenId, amountOfUserOneTokens, { from: userOne, value: tokenPriceByWei })
 
-            let balanceOfFirstUser = await deployed.balanceOf(firstUser, maxTokenId);
-            assert.equal(balanceOfFirstUser.toString(), '1');
+            expectEvent(receiptOne, 'TransferSingle', {
+                operator: userOne,
+                from: constants.ZERO_ADDRESS,
+                to: userOne,
+                id: toBN(maxTokenId),
+                value: toBN(amountOfUserOneTokens),
+            });
 
-            let secondUser = accounts[2]
-            await deployed.mintByETH(maxTokenId, 10, { from: secondUser, value: tokenPriceByWei * 10 })
+            const balanceOfUserOne = await deployed.balanceOf(userOne, maxTokenId);
+            assert.equal(balanceOfUserOne.toString(), amountOfUserOneTokens.toString());
 
-            let balanceOfSecondUser = await deployed.balanceOf(secondUser, maxTokenId);
-            assert.equal(balanceOfSecondUser.toString(), '10');
+            const userTwo = accounts[2]
+            const amountOfUserTwoTokens = 10
+            await deployed.mintByETH(maxTokenId, amountOfUserTwoTokens, { from: userTwo, value: tokenPriceByWei * 10 })
 
-            let totalSupply = await deployed.totalSupply(maxTokenId)
-            assert.equal(totalSupply.toString(), '11')
+            const balanceOfUserTwo = await deployed.balanceOf(userTwo, maxTokenId);
+            assert.equal(balanceOfUserTwo.toString(), amountOfUserTwoTokens.toString());
+
+            const totalSupply = await deployed.totalSupply(maxTokenId)
+            assert.equal(totalSupply.toString(), (amountOfUserOneTokens + amountOfUserTwoTokens).toString())
         })
 
         it("should succeed for 1000 tokens for same tokenId", async () => {
-            let tokenId = 0
+            const tokenId = 0
 
-            await deployed.mintByETH(tokenId, 500, { from: accounts[3], value: tokenPriceByWei * 500 })
-            await deployed.mintByETH(tokenId, 500, { from: accounts[4], value: tokenPriceByWei * 500 })
+            const userOne = accounts[3]
+            const amountOfUserOneTokens = 500
 
-            let totalSupply = await deployed.totalSupply(tokenId)
+            const receiptOne = await deployed.mintByETH(tokenId, amountOfUserOneTokens, { from: userOne, value: tokenPriceByWei * amountOfUserOneTokens })
+            expectEvent(receiptOne, 'TransferSingle', {
+                operator: userOne,
+                from: constants.ZERO_ADDRESS,
+                to: userOne,
+                id: toBN(tokenId),
+                value: toBN(amountOfUserOneTokens),
+            });
+
+            const userTwo = accounts[3]
+            const amountOfUserTwoTokens = 500
+            await deployed.mintByETH(tokenId, amountOfUserTwoTokens, { from: userTwo, value: tokenPriceByWei * amountOfUserTwoTokens })
+
+            const totalSupply = await deployed.totalSupply(tokenId)
             assert.equal(totalSupply.toString(), '1000')
         })
 
@@ -65,15 +87,15 @@ contract("FootballTokens", accounts => {
             await deployed.mintByETH(0, 1000, { from: accounts[5], value: tokenPriceByWei * 1000 })
             await deployed.mintByETH(1, 1000, { from: accounts[6], value: tokenPriceByWei * 1000 })
 
-            let totalSuppliedForTokenId0 = await deployed.totalSupply(0)
-            let totalSuppliedForTokenId1 = await deployed.totalSupply(1)
+            const totalSuppliedForTokenId0 = await deployed.totalSupply(0)
+            const totalSuppliedForTokenId1 = await deployed.totalSupply(1)
 
             assert.equal(totalSuppliedForTokenId0.toString(), '1000')
             assert.equal(totalSuppliedForTokenId1.toString(), '1000')
         })
 
-        it("should failed for 1001 tokens for same tokenId", async () => {
-            let tokenId = 0
+        it("should fail for 1001 tokens for same tokenId", async () => {
+            const tokenId = 0
 
             await deployed.mintByETH(tokenId, 500, { from: accounts[3], value: tokenPriceByWei * 500 })
             await deployed.mintByETH(tokenId, 500, { from: accounts[4], value: tokenPriceByWei * 500 })
@@ -83,14 +105,14 @@ contract("FootballTokens", accounts => {
             )
         })
 
-        it("should faill with incorrect token id", async () => {
+        it("should fail with incorrect token id", async () => {
             await expectRevert(
                 deployed.mintByETH(maxTokenId + 1, 1, { from: accounts[1], value: tokenPriceByWei }),
                 'Incorrect tokenId'
             );
         })
 
-        it("should faill not enough ether", async () => {
+        it("should fail not enough ether", async () => {
             await expectRevert(
                 deployed.mintByETH(0, 1, { from: accounts[2], value: 1e15 }),
                 'Not enough ether'
@@ -100,29 +122,50 @@ contract("FootballTokens", accounts => {
 
     describe('mintByPaymentToken', async () => {
         it("should success with correct token id and usdcAmount", async () => {
-            let user = accounts[3]
-            let usdcAmount = toBN(900e18) //900 usdc
+            const user = accounts[3]
+            const usdcAmount = toBN(900e18) //900 usdc
 
             await usdcMock.mint(usdcAmount, { from: user })
             await usdcMock.approve(deployed.address, usdcAmount, { from: user })
-            await deployed.mintByPaymentToken(maxTokenId, 30, { from: user })
+            const receipt = await deployed.mintByPaymentToken(maxTokenId, 30, { from: user })
+
+            // expectEvent(receipt, 'Transfer', {
+            //     from: user,
+            //     to: deployed.address,
+            //     amount: toBN(usdcAmount)
+            // });
+
+            expectEvent(receipt, 'TransferSingle', {
+                operator: user,
+                from: constants.ZERO_ADDRESS,
+                to: user,
+                id: toBN(maxTokenId),
+                value: toBN(30),
+            });
 
             balanceOfUser = await usdcMock.balanceOf(user)
             assert.equal(balanceOfUser.toString(), '0')
 
-            var balanceOfContract = await usdcMock.balanceOf(deployed.address)
+            const balanceOfContract = await usdcMock.balanceOf(deployed.address)
             assert.equal(balanceOfContract.toString(), 900e18.toString())
 
 
-            let balanceOfMintedTokens = await deployed.balanceOf(user, maxTokenId);
+            const balanceOfMintedTokens = await deployed.balanceOf(user, maxTokenId);
             assert.equal(balanceOfMintedTokens.toString(), '30');
         })
 
-        it("should faill with incorrect token id", async () => {
-            let user = accounts[1]
-            let usdcAmount = toBN(900e18) //900 usdc
+        it("should fail with incorrect token id", async () => {
+            const user = accounts[1]
+            const usdcAmount = toBN(900e18) //900 usdc
 
-            await usdcMock.mint(usdcAmount, { from: user })
+            const receiptUSDC = await usdcMock.mint(usdcAmount, { from: user })
+
+            expectEvent(receiptUSDC, 'Transfer', {
+                from: constants.ZERO_ADDRESS,
+                to: user,
+                value: toBN(usdcAmount)
+            });
+
             await usdcMock.approve(deployed.address, usdcAmount, { from: user })
 
             await expectRevert(
@@ -131,14 +174,14 @@ contract("FootballTokens", accounts => {
             );
         })
 
-        it("should faill because of max supply is exceeded", async () => {
-            let tokenId = 0
+        it("should fail because of max supply is exceeded", async () => {
+            const tokenId = 0
 
             await deployed.mintByETH(tokenId, 500, { from: accounts[3], value: tokenPriceByWei * 500 })
             await deployed.mintByETH(tokenId, 500, { from: accounts[4], value: tokenPriceByWei * 500 })
 
-            let user = accounts[1]
-            let usdcAmount = toBN(900e18) //900 usdc
+            const user = accounts[1]
+            const usdcAmount = toBN(900e18) //900 usdc
 
             await usdcMock.mint(usdcAmount, { from: user })
             await usdcMock.approve(deployed.address, usdcAmount, { from: user })
@@ -152,21 +195,21 @@ contract("FootballTokens", accounts => {
 
     describe('withdrawETH', async () => {
         it("should succeed to withdraw ether", async () => {
-            
-            let initialBalanceOfOwner = await web3.eth.getBalance(owner)
 
-            let balanceOfContract = await web3.eth.getBalance(deployed.address)
+            const balanceOfContract = await web3.eth.getBalance(deployed.address)
             assert.equal(balanceOfContract.toString(), '0')
 
             const tokenAmount = 10
             await deployed.mintByETH(0, tokenAmount, { from: accounts[3], value: toBN(tokenPriceByWei * tokenAmount) })
 
-            let balanceOfContractAfter = await web3.eth.getBalance(deployed.address)
+            const balanceOfContractAfter = await web3.eth.getBalance(deployed.address)
             assert.equal(balanceOfContractAfter.toString(), (tokenPriceByWei * tokenAmount).toString())
 
-            await deployed.withdrawETH(toBN(tokenPriceByWei * tokenAmount), { from: owner })
+            //Todo add checking for owner account 
+            //TODO: check events for call function
+            let receipt = await deployed.withdrawETH(toBN(tokenPriceByWei * tokenAmount), { from: owner })
 
-            let balanceAfterWithdraw = await web3.eth.getBalance(deployed.address)
+            const balanceAfterWithdraw = await web3.eth.getBalance(deployed.address)
             assert.equal(balanceAfterWithdraw.toString(), '0')
         })
 
@@ -186,31 +229,31 @@ contract("FootballTokens", accounts => {
     describe('withdrawPaymentToken', async () => {
         it("should succeed to withdraw usdc", async () => {
 
-            let user = accounts[1]
-            let usdcAmount = toBN(900e18) //900 usdc
+            const user = accounts[1]
+            const usdcAmount = toBN(900e18) //900 usdc
 
             await usdcMock.mint(usdcAmount, { from: user })
             await usdcMock.approve(deployed.address, usdcAmount, { from: user })
 
             await deployed.mintByPaymentToken(maxTokenId, 30, { from: user })
 
-            var balanceOfContract = await usdcMock.balanceOf(deployed.address)
+            const balanceOfContract = await usdcMock.balanceOf(deployed.address)
             assert.equal(balanceOfContract.toString(), 900e18.toString())
 
             await deployed.withdrawPaymentToken(usdcMock.address, usdcAmount, { from: owner })
 
-            var balanceOfContractAfter = await usdcMock.balanceOf(deployed.address)
+            const balanceOfContractAfter = await usdcMock.balanceOf(deployed.address)
             assert.equal(balanceOfContractAfter.toString(), '0')
 
-            var balanceOfOwner = await usdcMock.balanceOf(owner)
+            const balanceOfOwner = await usdcMock.balanceOf(owner)
             assert.equal(balanceOfOwner.toString(), usdcAmount.toString())
 
         })
 
         it("should fail for not owner to withdraw usdc", async () => {
 
-            let user = accounts[1]
-            let usdcAmount = toBN(900e18) //900 usdc
+            const user = accounts[1]
+            const usdcAmount = toBN(900e18) //900 usdc
 
             await usdcMock.mint(usdcAmount, { from: user })
             await usdcMock.approve(deployed.address, usdcAmount, { from: user })
