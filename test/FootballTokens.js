@@ -129,12 +129,6 @@ contract("FootballTokens", accounts => {
             await usdcMock.approve(deployed.address, usdcAmount, { from: user })
             const receipt = await deployed.mintByPaymentToken(maxTokenId, 30, { from: user })
 
-            // expectEvent(receipt, 'Transfer', {
-            //     from: user,
-            //     to: deployed.address,
-            //     amount: toBN(usdcAmount)
-            // });
-
             expectEvent(receipt, 'TransferSingle', {
                 operator: user,
                 from: constants.ZERO_ADDRESS,
@@ -205,9 +199,15 @@ contract("FootballTokens", accounts => {
             const balanceOfContractAfter = await web3.eth.getBalance(deployed.address)
             assert.equal(balanceOfContractAfter.toString(), (tokenPriceByWei * tokenAmount).toString())
 
-            //Todo add checking for owner account 
-            //TODO: check events for call function
+            const ownerInitialBalance = await web3.eth.getBalance(owner)
+
             let receipt = await deployed.withdrawETH(toBN(tokenPriceByWei * tokenAmount), { from: owner })
+
+            const ownerBalanceAfterWithdrawing = await web3.eth.getBalance(owner)
+            const txSpentGas = receipt.receipt.cumulativeGasUsed
+            
+            //TODO: Should be fixed
+            // assert.equal(ownerInitialBalance - txSpentGas + (tokenPriceByWei * tokenAmount), ownerBalanceAfterWithdrawing)
 
             const balanceAfterWithdraw = await web3.eth.getBalance(deployed.address)
             assert.equal(balanceAfterWithdraw.toString(), '0')
