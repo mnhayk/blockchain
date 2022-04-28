@@ -203,11 +203,14 @@ contract("FootballTokens", accounts => {
 
             let receipt = await deployed.withdrawETH(toBN(tokenPriceByWei * tokenAmount), { from: owner })
 
+            const txGasUsed = toBN(receipt.receipt.gasUsed)
+            const tx = await web3.eth.getTransaction(receipt.tx)
+            const gasPrice = toBN(tx.gasPrice)
+            const txFee = toBN(txGasUsed).mul(toBN(gasPrice));
+
             const ownerBalanceAfterWithdrawing = await web3.eth.getBalance(owner)
-            const txSpentGas = receipt.receipt.cumulativeGasUsed
-            
-            //TODO: Should be fixed
-            // assert.equal(ownerInitialBalance - txSpentGas + (tokenPriceByWei * tokenAmount), ownerBalanceAfterWithdrawing)
+
+            assert.equal(ownerInitialBalance - txFee + (tokenPriceByWei * tokenAmount), ownerBalanceAfterWithdrawing)
 
             const balanceAfterWithdraw = await web3.eth.getBalance(deployed.address)
             assert.equal(balanceAfterWithdraw.toString(), '0')
