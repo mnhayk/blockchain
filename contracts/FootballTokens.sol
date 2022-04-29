@@ -6,6 +6,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/token/ERC1155/extensions/ERC1155Supply.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/utils/Strings.sol";
 
 contract FootballTokens is ERC1155Supply, Ownable, ReentrancyGuard  {
     
@@ -14,6 +15,8 @@ contract FootballTokens is ERC1155Supply, Ownable, ReentrancyGuard  {
     uint public tokenPriceByWei;
     uint public tokenPriceByPaymentToken;
     address public paymentTokenAddress;
+    string public baseURI;
+
 
     event Received(address caller, uint amount, string message);
 
@@ -22,13 +25,14 @@ contract FootballTokens is ERC1155Supply, Ownable, ReentrancyGuard  {
                 uint _tokenPriceByWei, 
                 uint _tokenPriceByPaymentToken, 
                 address _paymentTokenAddress,
-                string memory uri) ERC1155(uri) {
+                string memory _uri) ERC1155(_uri) {
                     
         maxTokenId = _maxTokenId;
         maxAmountOfEachToken = _maxAmountOfEachToken;
         tokenPriceByWei = _tokenPriceByWei;
         tokenPriceByPaymentToken = _tokenPriceByPaymentToken;
         paymentTokenAddress = _paymentTokenAddress;
+        baseURI = _uri;
     }
 
     receive() external payable {
@@ -61,5 +65,9 @@ contract FootballTokens is ERC1155Supply, Ownable, ReentrancyGuard  {
 
     function withdrawPaymentToken(address tokenAddress, uint amount) external onlyOwner {
         IERC20(tokenAddress).transfer(msg.sender, amount);
+    }
+
+    function uri(uint256 tokenId) public view override returns (string memory) {
+        return string(abi.encodePacked(baseURI, Strings.toString(tokenId), ".json"));
     }
 }
