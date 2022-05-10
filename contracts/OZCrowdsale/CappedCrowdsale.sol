@@ -3,13 +3,13 @@
 pragma solidity ^0.8.10;
 
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
-import "./OZCrowdsale.sol";
+import "./Crowdsale.sol";
 
 /**
  * @title CappedCrowdsale
  * @dev Crowdsale with a limit for total contributions.
  */
-contract CappedCrowdsale is OZCrowdsale {
+contract CappedCrowdsale is Crowdsale {
     using SafeMath for uint256;
 
     uint256 private _cap;
@@ -18,7 +18,7 @@ contract CappedCrowdsale is OZCrowdsale {
      * @dev Constructor, takes maximum amount of wei accepted in the crowdsale.
      * @param cap Max amount of wei to be contributed
      */
-    constructor (uint256 cap, uint256 rate, address payable wallet, IERC20 token) OZCrowdsale(rate, wallet, token) {
+    constructor (uint256 cap, uint256 rate, address payable wallet, IERC20 token) Crowdsale(rate, wallet, token) {
         require(cap > 0, "CappedCrowdsale: cap is 0");
         _cap = cap;
     }

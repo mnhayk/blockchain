@@ -3,13 +3,13 @@
 pragma solidity ^0.8.10;
 
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
-import "./OZCrowdsale.sol";
+import "./Crowdsale.sol";
 
 /**
  * @title TimedCrowdsale
  * @dev Crowdsale accepting contributions only within a time frame.
  */
-contract OZTimedCrowdsale is OZCrowdsale {
+contract OZTimedCrowdsale is Crowdsale {
     using SafeMath for uint256;
 
     uint256 private _openingTime;
@@ -20,12 +20,15 @@ contract OZTimedCrowdsale is OZCrowdsale {
      * @param newClosingTime new closing time
      * @param prevClosingTime old closing time
      */
-    event TimedCrowdsaleExtended(uint256 prevClosingTime, uint256 newClosingTime);
+    event TimedCrowdsaleExtended(
+        uint256 prevClosingTime,
+        uint256 newClosingTime
+    );
 
     /**
      * @dev Reverts if not in crowdsale time range.
      */
-    modifier onlyWhileOpen {
+    modifier onlyWhileOpen() {
         require(isOpen(), "TimedCrowdsale: not open");
         _;
     }
@@ -35,11 +38,23 @@ contract OZTimedCrowdsale is OZCrowdsale {
      * @param openingTime Crowdsale opening time
      * @param closingTime Crowdsale closing time
      */
-    constructor (uint256 openingTime, uint256 closingTime, uint256 rate, address payable wallet, IERC20 token) OZCrowdsale(rate, wallet, token) {
+    constructor(
+        uint256 openingTime,
+        uint256 closingTime,
+        uint256 rate,
+        address payable wallet,
+        IERC20 token
+    ) Crowdsale(rate, wallet, token) {
         // solhint-disable-next-line not-rely-on-time
-        require(openingTime >= block.timestamp, "TimedCrowdsale: opening time is before current time");
+        require(
+            openingTime >= block.timestamp,
+            "TimedCrowdsale: opening time is before current time"
+        );
         // solhint-disable-next-line max-line-length
-        require(closingTime > openingTime, "TimedCrowdsale: opening time is not before closing time");
+        require(
+            closingTime > openingTime,
+            "TimedCrowdsale: opening time is not before closing time"
+        );
 
         _openingTime = openingTime;
         _closingTime = closingTime;
@@ -64,7 +79,8 @@ contract OZTimedCrowdsale is OZCrowdsale {
      */
     function isOpen() public view returns (bool) {
         // solhint-disable-next-line not-rely-on-time
-        return block.timestamp >= _openingTime && block.timestamp <= _closingTime;
+        return
+            block.timestamp >= _openingTime && block.timestamp <= _closingTime;
     }
 
     /**
@@ -81,7 +97,12 @@ contract OZTimedCrowdsale is OZCrowdsale {
      * @param beneficiary Token purchaser
      * @param weiAmount Amount of wei contributed
      */
-    function _preValidatePurchase(address beneficiary, uint256 weiAmount) internal override onlyWhileOpen view {
+    function _preValidatePurchase(address beneficiary, uint256 weiAmount)
+        internal
+        view
+        override
+        onlyWhileOpen
+    {
         super._preValidatePurchase(beneficiary, weiAmount);
     }
 
@@ -92,7 +113,10 @@ contract OZTimedCrowdsale is OZCrowdsale {
     function _extendTime(uint256 newClosingTime) internal {
         require(!hasClosed(), "TimedCrowdsale: already closed");
         // solhint-disable-next-line max-line-length
-        require(newClosingTime > _closingTime, "TimedCrowdsale: new closing time is before current closing time");
+        require(
+            newClosingTime > _closingTime,
+            "TimedCrowdsale: new closing time is before current closing time"
+        );
 
         emit TimedCrowdsaleExtended(_closingTime, newClosingTime);
         _closingTime = newClosingTime;
