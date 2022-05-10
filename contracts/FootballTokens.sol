@@ -16,6 +16,7 @@ contract FootballTokens is ERC1155Supply, Ownable, ReentrancyGuard  {
     uint public tokenPriceByPaymentToken;
     address public paymentTokenAddress;
     string public baseURI;
+    
 
 
     event Received(address caller, uint amount, string message);
