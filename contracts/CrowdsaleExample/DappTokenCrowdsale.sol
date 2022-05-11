@@ -11,7 +11,7 @@ import "../OZCrowdsale/Crowdsale.sol";
 import "../OZCrowdsale/CappedCrowdsale.sol";
 import "../OZCrowdsale/TimedCrowdsale.sol";
 import "../OZCrowdsale/WhitelistCrowdsale.sol";
-import "../OZCrowdsale/Refund/RefundableCrowdsale.sol";
+import "../OZCrowdsale/RefundableCrowdsale.sol";
 import "./DappToken.sol";
 
 contract DappTokenCrowdsale is
@@ -190,7 +190,9 @@ contract DappTokenCrowdsale is
             // Unpause the token
             token.unpause();
             
-            // TODO: should be found alternative
+            
+            // TODO: should be found alternative, maybe this will work
+            // >>>>>> "token.transfer(getWallet(), token.totalSupply());"
             // token.transferOwnership(getWallet());
         }
        

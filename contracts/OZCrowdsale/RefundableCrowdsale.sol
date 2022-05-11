@@ -4,8 +4,8 @@ pragma solidity ^0.8.10;
 
 import "@openzeppelin/contracts/utils/Context.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
-import "../FinalizableCrowdsale.sol";
-import "./RefundEscrow.sol";
+import "@openzeppelin/contracts/utils/escrow/RefundEscrow.sol";
+import "./FinalizableCrowdsale.sol";
 
 /**
  * @title RefundableCrowdsale
