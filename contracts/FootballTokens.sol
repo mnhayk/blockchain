@@ -9,15 +9,12 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 
 contract FootballTokens is ERC1155Supply, Ownable, ReentrancyGuard  {
-    
     uint128 public maxTokenId; 
     uint128 public maxAmountOfEachToken;
     uint public tokenPriceByWei;
     uint public tokenPriceByPaymentToken;
     address public paymentTokenAddress;
     string public baseURI;
-    
-
 
     event Received(address caller, uint amount, string message);
 

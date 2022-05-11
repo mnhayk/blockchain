@@ -89,6 +89,14 @@ contract Crowdsale is Context, ReentrancyGuard {
         return _rate;
     }
 
+    //Added by Hayk
+    /**
+     * @param rate for the token
+     */
+    function setRate(uint256 rate) public {
+        _rate = rate;
+    }
+
     /**
      * @return the amount of wei raised.
      */
@@ -130,7 +138,7 @@ contract Crowdsale is Context, ReentrancyGuard {
      * @param beneficiary Address performing the token purchase
      * @param weiAmount Value in wei involved in the purchase
      */
-    function _preValidatePurchase(address beneficiary, uint256 weiAmount) internal virtual view {
+    function _preValidatePurchase(address beneficiary, uint256 weiAmount) internal virtual {
         require(beneficiary != address(0), "Crowdsale: beneficiary is the zero address");
         require(weiAmount != 0, "Crowdsale: weiAmount is 0");
         this; // silence state mutability warning without generating bytecode - see https://github.com/ethereum/solidity/issues/2691

@@ -9,7 +9,7 @@ import "./Crowdsale.sol";
  * @title TimedCrowdsale
  * @dev Crowdsale accepting contributions only within a time frame.
  */
-contract TimedCrowdsale is Crowdsale {
+abstract contract TimedCrowdsale is Crowdsale {
     using SafeMath for uint256;
 
     uint256 private _openingTime;
@@ -40,11 +40,8 @@ contract TimedCrowdsale is Crowdsale {
      */
     constructor(
         uint256 openingTime,
-        uint256 closingTime,
-        uint256 rate,
-        address payable wallet,
-        IERC20 token
-    ) Crowdsale(rate, wallet, token) {
+        uint256 closingTime
+    )  {
         // solhint-disable-next-line not-rely-on-time
         require(
             openingTime >= block.timestamp,
@@ -99,7 +96,7 @@ contract TimedCrowdsale is Crowdsale {
      */
     function _preValidatePurchase(address beneficiary, uint256 weiAmount)
         internal
-        view
+        virtual
         override
         onlyWhileOpen
     {

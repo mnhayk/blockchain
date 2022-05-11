@@ -4,7 +4,7 @@ pragma solidity ^0.8.10;
 
 import "./ICOToken.sol";
 
-contract Crowdsalesd {
+contract MeidumCrowdsale {
 
     bool icoCompleted;
 
@@ -63,7 +63,7 @@ contract Crowdsalesd {
 
             (bool success, ) = msg.sender.call {value: exceedingEther}("");
             require(success, "Failed to refund Ether");
-     
+ 
             // Change the tokens to buy to the new number
             tokensToBuy -= exceedingTokens;
 

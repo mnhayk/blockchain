@@ -8,7 +8,6 @@ module.exports = async function(deployer, network) {
   const tokenPriceByPaymentToken = process.env.TOKEN_PRICE_BY_PAYMENT_TOKEN
   const metadataURI = process.env.METADATA_URI
 
-  
   if (network == "live") {
     const paymentTokenAddress = process.env.PAYMENT_TOKEN_ADDRESS 
     await deployer.deploy(FootballLeagueTokens, maxTokenId, maxAmountOfEachToken, tokenPriceByWei, tokenPriceByPaymentToken, paymentTokenAddress, metadataURI);
