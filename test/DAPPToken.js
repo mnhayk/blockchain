@@ -15,7 +15,7 @@ contract('DappToken', accounts => {
     this.token = await DappToken.new(_name, _symbol, _decimals);
   });
 
-  describe('token attributes', function() {
+  describe.skip('token attributes', function() {
     it('has the correct name', async function() {
       const name = await this.token.name();
       name.should.equal(_name);

@@ -134,7 +134,7 @@ contract DappTokenCrowdsale is
         internal
         override(Crowdsale, CappedCrowdsale, TimedCrowdsale, WhitelistCrowdsale)
     {
-        //TODO: Investingate which one will be called.
+        //TODO: Investingate which one will be called (we need all of them).
         super._preValidatePurchase(_beneficiary, _weiAmount);
         uint256 _existingContribution = contributions[_beneficiary];
         uint256 _newContribution = _existingContribution.add(_weiAmount);
