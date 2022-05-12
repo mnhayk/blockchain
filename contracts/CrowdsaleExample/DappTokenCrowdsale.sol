@@ -8,6 +8,7 @@ import "@openzeppelin/contracts/token/ERC20/presets/ERC20PresetMinterPauser.sol"
 import "@openzeppelin/contracts/token/ERC20/utils/TokenTimelock.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "../OZCrowdsale/Crowdsale.sol";
+import "../OZCrowdsale/MintedCrowdsale.sol";
 import "../OZCrowdsale/CappedCrowdsale.sol";
 import "../OZCrowdsale/TimedCrowdsale.sol";
 import "../OZCrowdsale/WhitelistCrowdsale.sol";
@@ -16,6 +17,7 @@ import "./DappToken.sol";
 
 contract DappTokenCrowdsale is
     Crowdsale,
+    MintedCrowdsale,
     CappedCrowdsale,
     TimedCrowdsale,
     WhitelistCrowdsale,
@@ -70,6 +72,7 @@ contract DappTokenCrowdsale is
         uint256 _releaseTime
     )
         Crowdsale(_rate, _wallet, _token)
+        MintedCrowdsale()
         CappedCrowdsale(_cap)
         TimedCrowdsale(_openingTime, _closingTime)
         WhitelistCrowdsale(_rate)
@@ -122,6 +125,7 @@ contract DappTokenCrowdsale is
             //TODO: should be checked "wallet.transfer(msg.value);"
             getWallet().transfer(msg.value);
         } else if (stage == CrowdsaleStage.ICO) {
+            //TODO: should be checked which super class function will be called
             super._forwardFunds();
         }
     }
@@ -146,8 +150,14 @@ contract DappTokenCrowdsale is
         contributions[_beneficiary] = _newContribution;
     }
 
-    //TODO: I believe this should be somethign overriden, need to check
-    function finalization() internal {
+    function _deliverTokens(address beneficiary, uint256 tokenAmount) internal override(Crowdsale, MintedCrowdsale) {
+       super._deliverTokens(beneficiary, tokenAmount);
+    }
+
+    // TODO: I believe this should be somethign overriden, need to check
+    // >>>>> Old version: "function finalization() internal {"
+    
+    function _finalization() internal override {
         if (goalReached()) {
             uint256 _alreadyMinted = token.totalSupply();
 
@@ -184,19 +194,15 @@ contract DappTokenCrowdsale is
                 _finalTotalSupply.mul(partnersPercentage).div(100)
             );
 
-            //Not exisit in current contract
-            // TODO: should be found alternative
+            // TODO: should be found out what is this doing.
             // token.finishMinting();
             // Unpause the token
             token.unpause();
-            
-            
-            // TODO: should be found alternative, maybe this will work
-            // >>>>>> "token.transfer(getWallet(), token.totalSupply());"
-            // token.transferOwnership(getWallet());
+            // TODO: old version:  token.transferOwnership(getWallet);
+            // Should be checked
+            token.transfer(getWallet(), token.totalSupply());
         }
-       
-        // TODO: original version was "super.finalization();"
-         super.finalize();
+
+        super._finalization();
     }
 }
