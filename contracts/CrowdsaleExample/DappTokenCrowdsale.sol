@@ -119,10 +119,8 @@ contract DappTokenCrowdsale is
      */
     function _forwardFunds() internal override(Crowdsale, RefundableCrowdsale) {
         if (stage == CrowdsaleStage.PreICO) {
-            //TODO: should be checked "wallet.transfer(msg.value);"
             getWallet().transfer(msg.value);
         } else if (stage == CrowdsaleStage.ICO) {
-            //TODO: should be checked which super class function will be called
             super._forwardFunds();
         }
     }
