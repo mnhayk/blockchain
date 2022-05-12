@@ -8,7 +8,6 @@ import "@openzeppelin/contracts/token/ERC20/presets/ERC20PresetMinterPauser.sol"
 import "@openzeppelin/contracts/token/ERC20/utils/TokenTimelock.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "../OZCrowdsale/Crowdsale.sol";
-import "../OZCrowdsale/MintedCrowdsale.sol";
 import "../OZCrowdsale/CappedCrowdsale.sol";
 import "../OZCrowdsale/TimedCrowdsale.sol";
 import "../OZCrowdsale/WhitelistCrowdsale.sol";
@@ -17,7 +16,6 @@ import "./DappToken.sol";
 
 contract DappTokenCrowdsale is
     Crowdsale,
-    MintedCrowdsale,
     CappedCrowdsale,
     TimedCrowdsale,
     WhitelistCrowdsale,
@@ -72,7 +70,6 @@ contract DappTokenCrowdsale is
         uint256 _releaseTime
     )
         Crowdsale(_rate, _wallet, _token)
-        MintedCrowdsale()
         CappedCrowdsale(_cap)
         TimedCrowdsale(_openingTime, _closingTime)
         WhitelistCrowdsale(_rate)
@@ -148,10 +145,6 @@ contract DappTokenCrowdsale is
                 _newContribution <= investorHardCap
         );
         contributions[_beneficiary] = _newContribution;
-    }
-
-    function _deliverTokens(address beneficiary, uint256 tokenAmount) internal override(Crowdsale, MintedCrowdsale) {
-       super._deliverTokens(beneficiary, tokenAmount);
     }
 
     // TODO: I believe this should be somethign overriden, need to check
