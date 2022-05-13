@@ -16,8 +16,7 @@ abstract contract MintedCrowdsale is Crowdsale {
      * @param beneficiary Token purchaser
      * @param tokenAmount Number of tokens to be minted
      */
-    function _deliverTokens(address beneficiary, uint256 tokenAmount) internal override {
-        // Potentially dangerous assumption about the type of the token.
+    function _deliverTokens(address beneficiary, uint256 tokenAmount) internal virtual override {
             ERC20PresetMinterPauser(address(getToken())).mint(beneficiary, tokenAmount);
     }
 }

@@ -117,6 +117,11 @@ contract DappTokenCrowdsale is
         }
     }
 
+    //Added by Hayk
+    function _deliverTokens(address beneficiary, uint256 tokenAmount) internal override(Crowdsale, MintedCrowdsale) {
+         super._deliverTokens(beneficiary, tokenAmount);
+    }
+
     /**
      * @dev forwards funds to the wallet during the PreICO stage, then the refund vault during ICO stage
      */
@@ -153,37 +158,38 @@ contract DappTokenCrowdsale is
     
     function _finalization() internal override {
         if (goalReached()) {
-            uint256 _alreadyMinted = token.totalSupply();
+            DappToken mintablePausableToken =  DappToken(address(getToken()));
+            uint256 _alreadyMinted = mintablePausableToken.totalSupply();
 
             uint256 _finalTotalSupply = _alreadyMinted
                 .div(tokenSalePercentage)
                 .mul(100);
 
             foundersTimelock = new TokenTimelock(
-                token,
+                mintablePausableToken,
                 foundersFund,
                 releaseTime
             );
             foundationTimelock = new TokenTimelock(
-                token,
+                mintablePausableToken,
                 foundationFund,
                 releaseTime
             );
             partnersTimelock = new TokenTimelock(
-                token,
+                mintablePausableToken,
                 partnersFund,
                 releaseTime
             );
 
-            token.mint(
+            mintablePausableToken.mint(
                 address(foundersTimelock),
                 _finalTotalSupply.mul(foundersPercentage).div(100)
             );
-            token.mint(
+            mintablePausableToken.mint(
                 address(foundationTimelock),
                 _finalTotalSupply.mul(foundationPercentage).div(100)
             );
-            token.mint(
+            mintablePausableToken.mint(
                 address(partnersTimelock),
                 _finalTotalSupply.mul(partnersPercentage).div(100)
             );
@@ -191,10 +197,10 @@ contract DappTokenCrowdsale is
             // TODO: should be found out what is this doing.
             // token.finishMinting();
             // Unpause the token
-            token.unpause();
+            mintablePausableToken.unpause();
             // TODO: old version:  token.transferOwnership(getWallet);
             // Should be checked
-            token.transfer(getWallet(), token.totalSupply());
+            mintablePausableToken.transfer(getWallet(), token.totalSupply());
         }
 
         super._finalization();
