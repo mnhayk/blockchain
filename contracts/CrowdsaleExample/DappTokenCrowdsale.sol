@@ -73,7 +73,7 @@ contract DappTokenCrowdsale is
         MintedCrowdsale()
         CappedCrowdsale(_cap)
         TimedCrowdsale(_openingTime, _closingTime)
-        WhitelistCrowdsale(_rate)
+        WhitelistCrowdsale()
         RefundableCrowdsale(_goal)
     {
         require(_goal <= _cap);

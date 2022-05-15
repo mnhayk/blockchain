@@ -11,7 +11,7 @@ import "./WhitelistedRole.sol";
  */
 abstract contract WhitelistCrowdsale is WhitelistedRole, Crowdsale {
 
-constructor(uint256 rate) {}
+    constructor() {}
     /**
      * @dev Extend parent behavior requiring beneficiary to be whitelisted. Note that no
      * restriction is imposed on the account sending the transaction.
