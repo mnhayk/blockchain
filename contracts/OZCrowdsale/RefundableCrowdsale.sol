@@ -3,7 +3,6 @@
 pragma solidity ^0.8.10;
 
 import "@openzeppelin/contracts/utils/Context.sol";
-import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/utils/escrow/RefundEscrow.sol";
 import "./FinalizableCrowdsale.sol";
 
@@ -18,8 +17,7 @@ import "./FinalizableCrowdsale.sol";
  * the crowdsale is finalized, and the users that purchased from them will be left with worthless tokens.
  */
 abstract contract RefundableCrowdsale is FinalizableCrowdsale {
-    using SafeMath for uint256;
-
+    
     // minimum amount of funds to be raised in weis
     uint256 private _goal;
 

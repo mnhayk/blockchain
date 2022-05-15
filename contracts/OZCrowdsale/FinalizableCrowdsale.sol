@@ -2,7 +2,6 @@
 // compiler version must be greater than or equal to 0.8.10 and less than 0.9.0
 pragma solidity ^0.8.10;
 
-import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "./TimedCrowdsale.sol";
 
 /**
@@ -11,7 +10,6 @@ import "./TimedCrowdsale.sol";
  * can do extra work after finishing.
  */
 abstract contract FinalizableCrowdsale is TimedCrowdsale {
-    using SafeMath for uint256;
 
     bool private _finalized;
 

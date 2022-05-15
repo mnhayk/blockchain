@@ -3,13 +3,11 @@
 pragma solidity ^0.8.10;
 
 import "@openzeppelin/contracts/utils/Context.sol";
-import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 contract Crowdsale is Context, ReentrancyGuard {
-    using SafeMath for uint256;
     using SafeERC20 for IERC20;
 
     // The token being sold
@@ -116,7 +114,7 @@ contract Crowdsale is Context, ReentrancyGuard {
         uint256 tokens = _getTokenAmount(weiAmount);
 
         // update state
-        _weiRaised = _weiRaised.add(weiAmount);
+        _weiRaised = _weiRaised + weiAmount;
 
         _processPurchase(beneficiary, tokens);
         emit TokensPurchased(_msgSender(), beneficiary, weiAmount, tokens);
@@ -188,7 +186,7 @@ contract Crowdsale is Context, ReentrancyGuard {
      * @return Number of tokens that can be purchased with the specified _weiAmount
      */
     function _getTokenAmount(uint256 weiAmount) internal view returns (uint256) {
-        return weiAmount.mul(_rate);
+        return weiAmount * _rate;
     }
 
     /**

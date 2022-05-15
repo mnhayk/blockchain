@@ -2,7 +2,6 @@
 // compiler version must be greater than or equal to 0.8.10 and less than 0.9.0
 pragma solidity ^0.8.10;
 
-import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "./Crowdsale.sol";
 
 /**
@@ -10,8 +9,6 @@ import "./Crowdsale.sol";
  * @dev Crowdsale with a limit for total contributions.
  */
 abstract contract CappedCrowdsale is Crowdsale {
-    using SafeMath for uint256;
-
     uint256 private _cap;
 
     /**
@@ -45,6 +42,6 @@ abstract contract CappedCrowdsale is Crowdsale {
      */
     function _preValidatePurchase(address beneficiary, uint256 weiAmount) internal  virtual override {
         super._preValidatePurchase(beneficiary, weiAmount);
-        require(weiRaised().add(weiAmount) <= _cap, "CappedCrowdsale: cap exceeded");
+        require(weiRaised() + weiAmount <= _cap, "CappedCrowdsale: cap exceeded");
     }
 }

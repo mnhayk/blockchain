@@ -6,7 +6,6 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/presets/ERC20PresetMinterPauser.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/TokenTimelock.sol";
-import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "../OZCrowdsale/Crowdsale.sol";
 import "../OZCrowdsale/MintedCrowdsale.sol";
 import "../OZCrowdsale/CappedCrowdsale.sol";
@@ -24,7 +23,6 @@ contract DappTokenCrowdsale is
     RefundableCrowdsale,
     Ownable
 {
-    using SafeMath for uint256;
     // Track investor contributions
     uint256 public investorMinCap = 2000000000000000; // 0.002 ether
     uint256 public investorHardCap = 50000000000000000000; // 50 ether
@@ -145,7 +143,7 @@ contract DappTokenCrowdsale is
         //TODO: Investingate which one will be called (we need all of them).
         super._preValidatePurchase(_beneficiary, _weiAmount);
         uint256 _existingContribution = contributions[_beneficiary];
-        uint256 _newContribution = _existingContribution.add(_weiAmount);
+        uint256 _newContribution = _existingContribution + _weiAmount;
         require(
             _newContribution >= investorMinCap &&
                 _newContribution <= investorHardCap
@@ -161,9 +159,7 @@ contract DappTokenCrowdsale is
             DappToken mintablePausableToken =  DappToken(address(getToken()));
             uint256 _alreadyMinted = mintablePausableToken.totalSupply();
 
-            uint256 _finalTotalSupply = _alreadyMinted
-                .div(tokenSalePercentage)
-                .mul(100);
+            uint256 _finalTotalSupply = _alreadyMinted / tokenSalePercentage * 100;
 
             foundersTimelock = new TokenTimelock(
                 mintablePausableToken,
@@ -183,15 +179,15 @@ contract DappTokenCrowdsale is
 
             mintablePausableToken.mint(
                 address(foundersTimelock),
-                _finalTotalSupply.mul(foundersPercentage).div(100)
+                _finalTotalSupply * foundersPercentage / 100
             );
             mintablePausableToken.mint(
                 address(foundationTimelock),
-                _finalTotalSupply.mul(foundationPercentage).div(100)
+                _finalTotalSupply * foundationPercentage / 100
             );
             mintablePausableToken.mint(
                 address(partnersTimelock),
-                _finalTotalSupply.mul(partnersPercentage).div(100)
+                _finalTotalSupply * partnersPercentage / 100
             );
 
             // TODO: should be found out what is this doing.
