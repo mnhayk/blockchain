@@ -121,7 +121,7 @@ contract STMPCrowdsale is Crowdsale, TimedCrowdsale, Ownable {
         uint256 currentStageTokens,
         uint256 currentStage,
         uint256 _rate
-    ) internal view returns (uint256 totalTokens) {
+    ) private view returns (uint256 totalTokens) {
         uint256 currentStageWei = (currentStageTokens - tokenRaised()) / _rate;
         uint256 nextStageWei = amount - currentStageWei;
         uint256 nextStageTokens = 0;
@@ -139,7 +139,7 @@ contract STMPCrowdsale is Crowdsale, TimedCrowdsale, Ownable {
     }
 
     function calculateStageTokens(uint256 weiPaid, uint256 currentStage)
-        internal
+        private
         view
         returns (uint256 calculatedTokens)
     {
