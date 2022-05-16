@@ -162,7 +162,10 @@ contract STMPCrowdsale is Crowdsale, TimedCrowdsale, Ownable {
 
         // Do the transfer at the end
         //TODO: should be checked
-        // if (returnTokens) msg.sender.transfer(weiNextTier);
+        // if (returnTokens) { 
+        //     (bool success, ) = msg.sender.call {value: weiNextTier }("");
+        //     require(success, "refunding failed");
+        // }
     }
 
     function calculateTokensTier(uint256 weiPaid, uint256 tierSelected)
