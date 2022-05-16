@@ -70,10 +70,8 @@ contract DappTokenCrowdsale is
         uint256 _releaseTime
     )
         Crowdsale(_rate, _wallet, _token)
-        MintedCrowdsale()
         CappedCrowdsale(_cap)
         TimedCrowdsale(_openingTime, _closingTime)
-        WhitelistCrowdsale()
         RefundableCrowdsale(_goal)
     {
         require(_goal <= _cap);
@@ -125,6 +123,7 @@ contract DappTokenCrowdsale is
      */
     function _forwardFunds() internal override(Crowdsale, RefundableCrowdsale) {
         if (stage == CrowdsaleStage.PreICO) {
+            //TODO: change function for sending ether
             getWallet().transfer(msg.value);
         } else if (stage == CrowdsaleStage.ICO) {
             super._forwardFunds();
@@ -140,7 +139,6 @@ contract DappTokenCrowdsale is
         internal
         override(Crowdsale, CappedCrowdsale, TimedCrowdsale, WhitelistCrowdsale)
     {
-        //TODO: Investingate which one will be called (we need all of them).
         super._preValidatePurchase(_beneficiary, _weiAmount);
         uint256 _existingContribution = contributions[_beneficiary];
         uint256 _newContribution = _existingContribution + _weiAmount;
@@ -191,12 +189,11 @@ contract DappTokenCrowdsale is
             );
 
             // TODO: should be found out what is this doing.
-            // token.finishMinting();
+            // mintablePausableToken.finishMinting();
             // Unpause the token
             mintablePausableToken.unpause();
-            // TODO: old version:  token.transferOwnership(getWallet);
-            // Should be checked
-            mintablePausableToken.transfer(getWallet(), token.totalSupply());
+
+            mintablePausableToken.transferOwnership(getWallet());
         }
 
         super._finalization();

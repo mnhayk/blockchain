@@ -3,8 +3,9 @@
 pragma solidity ^0.8.10;
 
 import "@openzeppelin/contracts/token/ERC20/presets/ERC20PresetMinterPauser.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 
-contract DappToken is ERC20PresetMinterPauser {
+contract DappToken is ERC20PresetMinterPauser, Ownable {
 
     uint8 private tokenDecimals;
 
@@ -17,4 +18,9 @@ contract DappToken is ERC20PresetMinterPauser {
         return tokenDecimals;
     }
 
+    function transferOwnership(address newOwner) public virtual override onlyOwner {
+        super.transferOwnership(newOwner);
+        super.grantRole(MINTER_ROLE, newOwner);
+        super.grantRole(PAUSER_ROLE, newOwner);
+    }
 }

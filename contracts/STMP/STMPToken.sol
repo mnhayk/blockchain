@@ -3,48 +3,37 @@
 pragma solidity ^0.8.10;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 
-contract ICOToken is ERC20 {
+contract STMPToken is ERC20, Ownable {
 
-    uint public initialTokenAmount;
-    uint public ICOEndTime;
+    
+    uint public closingTime;
 
     address public crowdsaleAddress;
-    address public owner;
 
     modifier onlyCrowdsale {
         require(msg.sender == crowdsaleAddress);
         _;
     }
 
-    modifier onlyOwner {
-       require(msg.sender == owner);
-       _;
-    }
-
     modifier afterCrowdsale {
-        require(block.timestamp > ICOEndTime || msg.sender == crowdsaleAddress);
+        require(block.timestamp > closingTime || msg.sender == crowdsaleAddress);
         _;
     }
 
-    constructor (uint _initialTokenAmount, uint _ICOEndTime, string memory name, string memory symbol) ERC20(name, symbol) {
-        require(_ICOEndTime > 0);
+    constructor (uint _closingTime, string memory name, string memory symbol) ERC20(name, symbol) {
+        require(_closingTime > 0);
+        closingTime = _closingTime;
+    }
 
-        owner = msg.sender;
-        initialTokenAmount = _initialTokenAmount;
-        ICOEndTime = _ICOEndTime;
-        _mint(msg.sender, _initialTokenAmount);
+    function mint(address account, uint256 amount) public onlyCrowdsale {
+        _mint(account, amount);
     }
 
     function setCrowdsale(address _crowdsaleAddress) public onlyOwner {
       require(_crowdsaleAddress != address(0));
       crowdsaleAddress = _crowdsaleAddress;
-    }
-
-    function buyTokens(address _receiver, uint256 _amount) public onlyCrowdsale {
-        require(_receiver != address(0));
-        require(_amount > 0);
-        transfer(_receiver, _amount);
     }
 
 /// @notice Override the functions to not allow token transfers until the end of the ICO
@@ -73,7 +62,7 @@ contract ICOToken is ERC20 {
     }
 
     function emergencyExtract() external onlyOwner {
-        (bool success, ) = owner.call {value: address(this).balance}("");
+        (bool success, ) = owner().call {value: address(this).balance}("");
         require(success, "Failed to withdraw Ether");
     }
 }
