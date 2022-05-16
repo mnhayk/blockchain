@@ -6,10 +6,8 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract STMPToken is ERC20, Ownable {
-
-    
+   
     uint public closingTime;
-
     address public crowdsaleAddress;
 
     modifier onlyCrowdsale {

@@ -6,21 +6,21 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/presets/ERC20PresetMinterPauser.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/TokenTimelock.sol";
-import "../OZCrowdsale/Crowdsale.sol";
-import "../OZCrowdsale/MintedCrowdsale.sol";
-import "../OZCrowdsale/CappedCrowdsale.sol";
-import "../OZCrowdsale/TimedCrowdsale.sol";
-import "../OZCrowdsale/WhitelistCrowdsale.sol";
-import "../OZCrowdsale/RefundableCrowdsale.sol";
+import "../OZCrowdsale/OZCrowdsale.sol";
+import "../OZCrowdsale/OZMintedCrowdsale.sol";
+import "../OZCrowdsale/OZCappedCrowdsale.sol";
+import "../OZCrowdsale/OZTimedCrowdsale.sol";
+import "../OZCrowdsale/OZWhitelistCrowdsale.sol";
+import "../OZCrowdsale/OZRefundableCrowdsale.sol";
 import "./DappToken.sol";
 
 contract DappTokenCrowdsale is
-    Crowdsale,
-    MintedCrowdsale,
-    CappedCrowdsale,
-    TimedCrowdsale,
-    WhitelistCrowdsale,
-    RefundableCrowdsale,
+    OZCrowdsale,
+    OZMintedCrowdsale,
+    OZCappedCrowdsale,
+    OZTimedCrowdsale,
+    OZWhitelistCrowdsale,
+    OZRefundableCrowdsale,
     Ownable
 {
     // Track investor contributions
@@ -69,10 +69,10 @@ contract DappTokenCrowdsale is
         address _partnersFund,
         uint256 _releaseTime
     )
-        Crowdsale(_rate, _wallet, _token)
-        CappedCrowdsale(_cap)
-        TimedCrowdsale(_openingTime, _closingTime)
-        RefundableCrowdsale(_goal)
+        OZCrowdsale(_rate, _wallet, _token)
+        OZCappedCrowdsale(_cap)
+        OZTimedCrowdsale(_openingTime, _closingTime)
+        OZRefundableCrowdsale(_goal)
     {
         require(_goal <= _cap);
         foundersFund = _foundersFund;
@@ -114,14 +114,14 @@ contract DappTokenCrowdsale is
     }
 
     //Added by Hayk
-    function _deliverTokens(address beneficiary, uint256 tokenAmount) internal override(Crowdsale, MintedCrowdsale) {
+    function _deliverTokens(address beneficiary, uint256 tokenAmount) internal override(OZCrowdsale, OZMintedCrowdsale) {
          super._deliverTokens(beneficiary, tokenAmount);
     }
 
     /**
      * @dev forwards funds to the wallet during the PreICO stage, then the refund vault during ICO stage
      */
-    function _forwardFunds() internal override(Crowdsale, RefundableCrowdsale) {
+    function _forwardFunds() internal override(OZCrowdsale, OZRefundableCrowdsale) {
         if (stage == CrowdsaleStage.PreICO) {
             //TODO: change function for sending ether
             getWallet().transfer(msg.value);
@@ -137,7 +137,7 @@ contract DappTokenCrowdsale is
      */
     function _preValidatePurchase(address _beneficiary, uint256 _weiAmount)
         internal
-        override(Crowdsale, CappedCrowdsale, TimedCrowdsale, WhitelistCrowdsale)
+        override(OZCrowdsale, OZCappedCrowdsale, OZTimedCrowdsale, OZWhitelistCrowdsale)
     {
         super._preValidatePurchase(_beneficiary, _weiAmount);
         uint256 _existingContribution = contributions[_beneficiary];

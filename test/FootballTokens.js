@@ -7,7 +7,7 @@ const { assert } = require('chai');
 
 const toBN = web3.utils.toBN;
 
-contract("FootballTokens", accounts => {
+contract.skip("FootballTokens", accounts => {
 
     const maxTokenId = 9
     const maxAmountOfEachToken = 1000

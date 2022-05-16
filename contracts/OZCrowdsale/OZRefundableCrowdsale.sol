@@ -4,7 +4,7 @@ pragma solidity ^0.8.10;
 
 import "@openzeppelin/contracts/utils/Context.sol";
 import "@openzeppelin/contracts/utils/escrow/RefundEscrow.sol";
-import "./FinalizableCrowdsale.sol";
+import "./OZFinalizableCrowdsale.sol";
 
 /**
  * @title RefundableCrowdsale
@@ -16,7 +16,7 @@ import "./FinalizableCrowdsale.sol";
  * the goal is unlikely to be met, they sell their tokens (possibly at a discount). The attacker will be refunded when
  * the crowdsale is finalized, and the users that purchased from them will be left with worthless tokens.
  */
-abstract contract RefundableCrowdsale is FinalizableCrowdsale {
+abstract contract OZRefundableCrowdsale is OZFinalizableCrowdsale {
     
     // minimum amount of funds to be raised in weis
     uint256 private _goal;

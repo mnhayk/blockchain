@@ -2,14 +2,14 @@
 // compiler version must be greater than or equal to 0.8.10 and less than 0.9.0
 pragma solidity ^0.8.10;
 
-import "./TimedCrowdsale.sol";
+import "./OZTimedCrowdsale.sol";
 
 /**
  * @title FinalizableCrowdsale
  * @dev Extension of TimedCrowdsale with a one-off finalization action, where one
  * can do extra work after finishing.
  */
-abstract contract FinalizableCrowdsale is TimedCrowdsale {
+abstract contract OZFinalizableCrowdsale is OZTimedCrowdsale {
 
     bool private _finalized;
 

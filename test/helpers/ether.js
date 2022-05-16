@@ -1,3 +1,5 @@
-module.exports = function ether (n) {
-    return new web3.BigNumber(web3.toWei(n, 'ether'));
-  }
+const toBN = web3.utils.toBN
+
+module.exports = function ether(n) {
+  return new toBN(web3.utils.toWei(String(n), 'ether'));
+}

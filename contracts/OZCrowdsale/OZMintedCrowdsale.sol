@@ -2,7 +2,7 @@
 // compiler version must be greater than or equal to 0.8.10 and less than 0.9.0
 pragma solidity ^0.8.10;
 
-import "./Crowdsale.sol";
+import "./OZCrowdsale.sol";
 import "@openzeppelin/contracts/token/ERC20/presets/ERC20PresetMinterPauser.sol";
 
 /**
@@ -10,7 +10,7 @@ import "@openzeppelin/contracts/token/ERC20/presets/ERC20PresetMinterPauser.sol"
  * @dev Extension of Crowdsale contract whose tokens are minted in each purchase.
  * Token ownership should be transferred to MintedCrowdsale for minting.
  */
-abstract contract MintedCrowdsale is Crowdsale {
+abstract contract OZMintedCrowdsale is OZCrowdsale {
     /**
      * @dev Overrides delivery by minting tokens upon purchase.
      * @param beneficiary Token purchaser

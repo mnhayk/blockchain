@@ -6,16 +6,18 @@ require('chai')
   .use(require('chai-bignumber')(BigNumber))
   .should();
 
-contract('DappToken', accounts => {
+const toBN = web3.utils.toBN;
+
+contract.skip('DappToken', accounts => {
   const _name = 'Dapp Token';
   const _symbol = 'DAPP';
-  const _decimals = 18;
+  const _decimals = 12;
 
   beforeEach(async function () {
     this.token = await DappToken.new(_name, _symbol, _decimals);
   });
 
-  describe.skip('token attributes', function() {
+  describe('token attributes', function() {
     it('has the correct name', async function() {
       const name = await this.token.name();
       name.should.equal(_name);
@@ -27,9 +29,9 @@ contract('DappToken', accounts => {
     });
 
     //TODO: should be fixed
-    it.skip('has the correct decimals', async function() {
+    it('has the correct decimals', async function() {
         const decimals = await this.token.decimals();
-        decimals.should.be.bignumber.equal(_decimals);
+        decimals.should.be.bignumber.equal(toBN(_decimals));
       });
   });
 });

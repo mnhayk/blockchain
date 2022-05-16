@@ -2,13 +2,13 @@
 // compiler version must be greater than or equal to 0.8.10 and less than 0.9.0
 pragma solidity ^0.8.10;
 
-import "./Crowdsale.sol";
+import "./OZCrowdsale.sol";
 
 /**
  * @title CappedCrowdsale
  * @dev Crowdsale with a limit for total contributions.
  */
-abstract contract CappedCrowdsale is Crowdsale {
+abstract contract OZCappedCrowdsale is OZCrowdsale {
     uint256 private _cap;
 
     /**
