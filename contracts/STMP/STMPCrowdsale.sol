@@ -8,7 +8,6 @@ import "./Crowdsale.sol";
 import "./TimedCrowdsale.sol";
 
 contract STMPCrowdsale is Crowdsale, TimedCrowdsale, Ownable {
-    uint256 public fullTokenAmount;
     address public tokenAddress;
 
     //TODO: Rate should be calculated
@@ -52,10 +51,7 @@ contract STMPCrowdsale is Crowdsale, TimedCrowdsale, Ownable {
     {
         require(_fullTokenAmount > 0, "Invalid Token amount");
         require(_tokenAddress != address(0), "Invalid address");
-        fullTokenAmount = _fullTokenAmount;
         tokenAddress = _tokenAddress;
-
-        STMPToken(tokenAddress).mint(address(this), fullTokenAmount);
     }
 
     /**
@@ -122,6 +118,7 @@ contract STMPCrowdsale is Crowdsale, TimedCrowdsale, Ownable {
         uint256 currentStage,
         uint256 _rate
     ) private view returns (uint256 totalTokens) {
+        //TODO: should be checked
         uint256 currentStageWei = (currentStageTokens - tokenRaised()) / _rate;
         uint256 nextStageWei = amount - currentStageWei;
         uint256 nextStageTokens = 0;
@@ -135,7 +132,7 @@ contract STMPCrowdsale is Crowdsale, TimedCrowdsale, Ownable {
         totalTokens = currentStageTokens - tokenRaised() + nextStageTokens;
 
         // Do the transfer at the end
-        // if(returnTokens) msg.sender.transfer(weiNextTier);
+        // if(returnTokens) msg.sender.transfer(nextStageWei);
     }
 
     function calculateStageTokens(uint256 weiPaid, uint256 currentStage)
