@@ -41,18 +41,36 @@ contract STMPCrowdsale is Crowdsale, TimedCrowdsale, Ownable {
     // ICO closing - 01.10.2022 GMT+0400 (Armenia Standard Time)
     uint256 stageThreeClosingTime = 1664568000;
 
+    // Variable showing whether should be done refund for exceeding money
+    bool private shouldRefund = false;
+
+    // Address for investor for refunding exceeding money
+    address private investorAddressForRefund;
+
+    // Exceeding money value
+    uint256 private refundValue;
+
+    /**
+     * @dev Constructor for ICOCrowdsale 
+     * @param _fullTokenAmount Token Amount during the ICO
+     * @param _wallet Crowdsale wallet
+     * @param _tokenAddress Token address for crowdsale
+     */
     constructor(
         uint256 _fullTokenAmount,
-        uint256 _tokenRate,
         address payable _wallet,
         address _tokenAddress
     )
-        Crowdsale(_tokenRate, _wallet, IERC20(_tokenAddress))
+        Crowdsale(stageOneRate, _wallet, IERC20(_tokenAddress))
         TimedCrowdsale(stageOneOpeningTime, stageThreeClosingTime)
     {
         require(_fullTokenAmount > 0, "Invalid Token amount");
     }
 
+    /**
+     * @dev Calculate token amount which should be transfered to investor
+     * @param weiAmount Amount of wei contributed
+     */
     function _getTokenAmount(uint256 weiAmount)
         internal
         view
@@ -112,9 +130,9 @@ contract STMPCrowdsale is Crowdsale, TimedCrowdsale, Ownable {
     }
 
     /**
-     * @dev Extend parent behavior requiring purchase to respect investor min/max funding cap.
-     * @param _beneficiary Token purchaser
-     * @param _weiAmount Amount of wei contributed
+     * @dev Validation of an incoming purchase. Use require statements to revert state when conditions are not met.
+     * @param _beneficiary Address performing the token purchase
+     * @param _weiAmount Value in wei involved in the purchase
      */
     function _preValidatePurchase(address _beneficiary, uint256 _weiAmount)
         internal
@@ -123,7 +141,27 @@ contract STMPCrowdsale is Crowdsale, TimedCrowdsale, Ownable {
         super._preValidatePurchase(_beneficiary, _weiAmount);
     }
 
-    //Private functions
+    function _processPurchase(address beneficiary, uint256 tokenAmount) internal override {
+        super._processPurchase(beneficiary, tokenAmount);
+
+        if (shouldRefund) {
+            require(beneficiary == investorAddressForRefund);
+            (bool success, ) = investorAddressForRefund.call{value: refundValue}("");
+            require(success, "Refund failed");
+
+            shouldRefund = false;
+            investorAddressForRefund = address(0);
+            refundValue = 0;
+        }
+    }
+
+    /**
+     * @dev Calculate exceeding token amount for current stage
+     * @param amount Amount of wei contributed
+     * @param currentStageLimit Current stage maximum limit
+     * @param currentStage Current stage index
+     * @param _rate Current stage rate
+     */
     function calculateExcessTokens(
         uint256 amount,
         uint256 currentStageLimit,
@@ -143,27 +181,38 @@ contract STMPCrowdsale is Crowdsale, TimedCrowdsale, Ownable {
         } else {
             returnTokens = true;
         }
-        totalTokens = currentStageLimit - tokenRaised() + nextStageTokens;
-        return totalTokens;
 
-        // Do the transfer at the end
-        // if(returnTokens) msg.sender.transfer(nextStageWei);
+        if(returnTokens) {
+            shouldRefund = true;
+
+            investorAddressForRefund = msg.sender;
+            refundValue = nextStageWei;
+        }
+
+        totalTokens = currentStageLimit - tokenRaised() + nextStageTokens;
     }
 
-    function calculateStageTokens(uint256 weiPaid, uint256 currentStage)
+    /**
+     * @dev Calculate stage tokens count for specific amount of wei
+     * @param weiPaid Amount of wei contributed
+     * @param stage stage index
+     */
+    function calculateStageTokens(uint256 weiPaid, uint256 stage)
         private
         view
         returns (uint256 calculatedTokens)
     {
         require(weiPaid > 0);
-        require(currentStage >= 0 && currentStage <= 3);
+        require(stage >= 0 && stage <= 3);
 
-        if (currentStage == 1) {
-            calculatedTokens = weiPaid * stageOneRate;
-        } else if (currentStage == 2) {
-            calculatedTokens = weiPaid * stageTwoRate;
-        } else if (currentStage == 3) {
-            calculatedTokens = weiPaid * stageThreeRate;
+        uint256 decimals = STMPToken(address(getToken())).decimals();
+
+        if (stage == 1) {
+            calculatedTokens = weiPaid * (10 ** decimals) / 1 ether * stageOneRate;
+        } else if (stage == 2) {
+            calculatedTokens = weiPaid * (10 ** decimals) / 1 ether * stageTwoRate;
+        } else if (stage == 3) {
+            calculatedTokens = weiPaid * (10 ** decimals) / 1 ether * stageThreeRate;
         } 
     }
 }
