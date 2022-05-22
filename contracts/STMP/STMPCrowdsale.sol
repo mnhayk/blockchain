@@ -102,9 +102,9 @@ contract STMPCrowdsale is Crowdsale, TimedCrowdsale, Ownable {
             if (tokenRaised() + tokensToBuy > stageTwoLimit) {
                 tokensToBuy = calculateExcessTokens(
                     weiAmount,
-                    stageTwoLimit,
-                    2,
-                    stageTwoRate
+                    stageThreeLimit,
+                    3,
+                    stageThreeRate
                 );
             }
         }
