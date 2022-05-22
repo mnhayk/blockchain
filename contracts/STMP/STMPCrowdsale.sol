@@ -99,7 +99,7 @@ contract STMPCrowdsale is Crowdsale, TimedCrowdsale, Ownable {
             tokensToBuy =
                 ((weiAmount * (10**decimals)) / 1 ether) *
                 stageTwoRate;
-            if (tokenRaised() + tokensToBuy > stageTwoLimit) {
+            if (tokenRaised() + tokensToBuy > stageThreeLimit) {
                 tokensToBuy = calculateExcessTokens(
                     weiAmount,
                     stageThreeLimit,
@@ -126,17 +126,16 @@ contract STMPCrowdsale is Crowdsale, TimedCrowdsale, Ownable {
     //Private functions
     function calculateExcessTokens(
         uint256 amount,
-        uint256 currentStageTokens,
+        uint256 currentStageLimit,
         uint256 currentStage,
         uint256 _rate
     ) private view returns (uint256 totalTokens) {
-        //TODO: should be checked
-        uint256 currentStageWei = (currentStageTokens - tokenRaised()) / _rate;
+        uint256 currentStageWei = (currentStageLimit - tokenRaised()) / _rate;
         uint256 nextStageWei = amount - currentStageWei;
         uint256 nextStageTokens = 0;
         bool returnTokens = false;
 
-        if (currentStage != 4 || currentStage != 0) {
+        if (currentStage != 3) {
             nextStageTokens = calculateStageTokens(
                 nextStageWei,
                 currentStage + 1
@@ -144,7 +143,8 @@ contract STMPCrowdsale is Crowdsale, TimedCrowdsale, Ownable {
         } else {
             returnTokens = true;
         }
-        totalTokens = currentStageTokens - tokenRaised() + nextStageTokens;
+        totalTokens = currentStageLimit - tokenRaised() + nextStageTokens;
+        return totalTokens;
 
         // Do the transfer at the end
         // if(returnTokens) msg.sender.transfer(nextStageWei);
@@ -156,7 +156,7 @@ contract STMPCrowdsale is Crowdsale, TimedCrowdsale, Ownable {
         returns (uint256 calculatedTokens)
     {
         require(weiPaid > 0);
-        require(currentStage >= 0 && currentStage <= 4);
+        require(currentStage >= 0 && currentStage <= 3);
 
         if (currentStage == 1) {
             calculatedTokens = weiPaid * stageOneRate;
