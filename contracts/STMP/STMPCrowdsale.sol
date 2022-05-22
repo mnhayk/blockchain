@@ -73,7 +73,6 @@ contract STMPCrowdsale is Crowdsale, TimedCrowdsale, Ownable {
      */
     function _getTokenAmount(uint256 weiAmount)
         internal
-        view
         override
         returns (uint256)
     {
@@ -167,7 +166,7 @@ contract STMPCrowdsale is Crowdsale, TimedCrowdsale, Ownable {
         uint256 currentStageLimit,
         uint256 currentStage,
         uint256 _rate
-    ) private view returns (uint256 totalTokens) {
+    ) private returns (uint256 totalTokens) {
         uint256 currentStageWei = (currentStageLimit - tokenRaised()) / _rate;
         uint256 nextStageWei = amount - currentStageWei;
         uint256 nextStageTokens = 0;
