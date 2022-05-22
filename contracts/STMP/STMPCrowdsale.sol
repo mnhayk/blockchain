@@ -50,6 +50,9 @@ contract STMPCrowdsale is Crowdsale, TimedCrowdsale, Ownable {
     // Exceeding money value
     uint256 private refundValue;
 
+    // USDC address
+    address usdcAddress = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
+
     /**
      * @dev Constructor for ICOCrowdsale 
      * @param _fullTokenAmount Token Amount during the ICO
@@ -61,7 +64,7 @@ contract STMPCrowdsale is Crowdsale, TimedCrowdsale, Ownable {
         address payable _wallet,
         address _tokenAddress
     )
-        Crowdsale(stageOneRate, _wallet, IERC20(_tokenAddress))
+        Crowdsale(stageOneRate, _wallet, IERC20(usdcAddress), IERC20(_tokenAddress))
         TimedCrowdsale(stageOneOpeningTime, stageThreeClosingTime)
     {
         require(_fullTokenAmount > 0, "Invalid Token amount");
@@ -128,6 +131,13 @@ contract STMPCrowdsale is Crowdsale, TimedCrowdsale, Ownable {
         return tokensToBuy;
     }
 
+    function _getTokenAmountWithUSDC(uint256 usdcAmount) internal virtual override returns (uint256) {
+        //TODO: should add logic for calculating tokens amount using sent usdcAmount and current usdc price from Oracle
+    }
+
+    function _forwardFundsWithUSDC(uint256 usdcAmount) internal virtual override {
+        getPaymentTokenAddress().transferFrom(msg.sender, address(this), usdcAmount);
+    }
     /**
      * @dev Validation of an incoming purchase. Use require statements to revert state when conditions are not met.
      * @param _beneficiary Address performing the token purchase

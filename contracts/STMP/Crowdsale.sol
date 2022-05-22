@@ -16,6 +16,11 @@ contract Crowdsale is Context, ReentrancyGuard {
     // Address where funds are collected
     address payable private _wallet;
 
+    //TODO: maybe we should have separate address for sending usdc value
+
+    // ERC20 token address
+    IERC20 private _paymentTokenAddress;
+
     // How many token units a buyer gets per wei.
     // The rate is the conversion between wei and the smallest and indivisible token unit.
     // So, if you are using a rate of 1 with a ERC20Detailed token with 3 decimals called TOK
@@ -28,6 +33,9 @@ contract Crowdsale is Context, ReentrancyGuard {
     // Amount of token raised  >>>> By Hayk
     uint256 private _tokenRaised;
 
+    // Amount of USDC token raised  >>>> By Hayk
+    uint256 private _usdcRaised;
+
     /**
      * Event for token purchase logging
      * @param purchaser who paid for the tokens
@@ -37,6 +45,15 @@ contract Crowdsale is Context, ReentrancyGuard {
      */
     event TokensPurchased(address indexed purchaser, address indexed beneficiary, uint256 value, uint256 amount);
 
+     /**
+     * Event for token purchase logging
+     * @param purchaser who paid for the tokens
+     * @param beneficiary who got the tokens
+     * @param value usdc sent for tokens
+     * @param amount amount of tokens purchased
+     */
+    event TokensPurchasedWithUSDC(address indexed purchaser, address indexed beneficiary, uint256 value, uint256 amount);
+
     /**
      * @param rate Number of token units a buyer gets per wei
      * @dev The rate is the conversion between wei and the smallest and indivisible
@@ -45,14 +62,16 @@ contract Crowdsale is Context, ReentrancyGuard {
      * @param wallet Address where collected funds will be forwarded to
      * @param token Address of the token being sold
      */
-    constructor (uint256 rate, address payable wallet, IERC20 token)  {
+    constructor (uint256 rate, address payable wallet, IERC20 paymentTokenAddress, IERC20 token)  {
         require(rate > 0, "Crowdsale: rate is 0");
         require(wallet != address(0), "Crowdsale: wallet is the zero address");
         require(address(token) != address(0), "Crowdsale: token is the zero address");
+        require(address(paymentTokenAddress) != address(0), "Crowdsale: paymentTokenAddress is the zero address");
 
         _rate = rate;
         _wallet = wallet;
         _token = token;
+        _paymentTokenAddress = paymentTokenAddress;
     }
 
     /**
@@ -84,6 +103,13 @@ contract Crowdsale is Context, ReentrancyGuard {
     }
 
     /**
+     * @return the address of USDC.
+     */
+    function getPaymentTokenAddress() public view returns (IERC20) {
+        return _paymentTokenAddress;
+    }
+
+    /**
      * @return the number of token units a buyer gets per wei.
      */
     function getRate() public view returns (uint256) {
@@ -111,6 +137,13 @@ contract Crowdsale is Context, ReentrancyGuard {
     }
 
     /**
+     * @return the amount of USDC token raised.
+     */
+    function usdcRaised() public view returns (uint256) {
+        return _usdcRaised;
+    }
+
+    /**
      * @dev low level token purchase ***DO NOT OVERRIDE***
      * This function has a non-reentrancy guard, so it shouldn't be called by
      * another `nonReentrant` function.
@@ -121,6 +154,7 @@ contract Crowdsale is Context, ReentrancyGuard {
         _preValidatePurchase(beneficiary, weiAmount);
 
         // calculate token amount to be created
+        // TODO: I believe we should check refundable part as well and subtract from 'weiAmount'
         uint256 tokens = _getTokenAmount(weiAmount);
 
         // update state
@@ -134,6 +168,33 @@ contract Crowdsale is Context, ReentrancyGuard {
 
         _forwardFunds();
         _postValidatePurchase(beneficiary, weiAmount);
+    }
+
+    /**
+     * @dev low level token purchase ***DO NOT OVERRIDE***
+     * This function has a non-reentrancy guard, so it shouldn't be called by
+     * another `nonReentrant` function.
+     * @param beneficiary Recipient of the token purchase
+     * @param usdcAmount USDC sent for buying tokens
+     */
+    function buyTokensWithUSDC(address beneficiary, uint256 usdcAmount) public nonReentrant {
+        _preValidatePurchase(beneficiary, usdcAmount);
+
+        // calculate token amount to be created
+        // TODO: I believe we should check refundable part as well and subtract from 'usdcAmount'
+        uint256 tokens = _getTokenAmountWithUSDC(usdcAmount);
+
+        // update state
+        _usdcRaised = _usdcRaised + usdcAmount;
+        _tokenRaised = _tokenRaised + tokens;
+
+        _processPurchase(beneficiary, tokens);
+        emit TokensPurchasedWithUSDC(_msgSender(), beneficiary, usdcAmount, tokens);
+
+        _updatePurchasingState(beneficiary, usdcAmount);
+
+        _forwardFundsWithUSDC(usdcAmount);
+        _postValidatePurchase(beneficiary, usdcAmount);
     }
 
     /**
@@ -201,9 +262,27 @@ contract Crowdsale is Context, ReentrancyGuard {
     }
 
     /**
+     * @dev Override to extend the way in which USDC is converted to tokens.
+     * @param usdcAmount Amount of USDC to be converted into tokens
+     * @return Number of tokens that can be purchased with the specified usdcAmount
+     */
+    function _getTokenAmountWithUSDC(uint256 usdcAmount) internal virtual returns (uint256) {
+        //TODO: should be checked what to return
+        return usdcAmount;
+    }
+
+    /**
      * @dev Determines how ETH is stored/forwarded on purchases.
      */
     function _forwardFunds() internal virtual {
         _wallet.transfer(msg.value);
+    }
+
+    /**
+     * @dev Determines how USDC is stored/forwarded on purchases.
+     * @param usdcAmount Amount of USDC to saved
+     */
+    function _forwardFundsWithUSDC(uint256 usdcAmount) internal virtual {
+        // solhint-disable-previous-line no-empty-blocks
     }
 }
