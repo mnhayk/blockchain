@@ -8,92 +8,104 @@ import "./Crowdsale.sol";
 import "./TimedCrowdsale.sol";
 
 contract STMPCrowdsale is Crowdsale, TimedCrowdsale, Ownable {
-    address public tokenAddress;
+    // ICO stage one Rate
+    uint256 public stageOneRate = 5000;
 
-    //TODO: Rate should be calculated
-    uint256 public ratePreSale = 6000;
+    // ICO stage two Rate
+    uint256 public stageTwoRate = 4000;
 
-    uint256 public rateOne = 5000;
-    uint256 public rateTwo = 4000;
-    uint256 public rateThree = 3000;
-    uint256 public rateFour = 2000;
+    // ICO stage three Rate
+    uint256 public stageThreeRate = 3000;
 
-    uint256 public stagePreSaleLimit =
-        3e6 * (10**(STMPToken(address(getToken())).decimals()));
-
+    // ICO stage one token maximum limit
     uint256 public stageOneLimit =
-        153e6 * (10**(STMPToken(address(getToken())).decimals()));
+        150e6 * (10**(STMPToken(address(getToken())).decimals()));
+
+    // ICO stage two token maximum limit
     uint256 public stageTwoLimit =
-        303e6 * (10**(STMPToken(address(getToken())).decimals()));
+        300e6 * (10**(STMPToken(address(getToken())).decimals()));
+
+    // ICO stage two token maximum limit
     uint256 public stageThreeLimit =
-        453e6 * (10**(STMPToken(address(getToken())).decimals()));
-    uint256 public stageFourLimit =
-        803e6 * (10**(STMPToken(address(getToken())).decimals()));
+        450e6 * (10**(STMPToken(address(getToken())).decimals()));
 
-    enum CrowdsaleStage {
-        PreSale,
-        ICO
-    }
+    // ICO sateg one opening time - 01.07.2022 GMT+0400 (Armenia Standard Time)
+    uint256 stageOneOpeningTime = 1656619200;
 
-    // Default to presale stage
-    CrowdsaleStage public stage = CrowdsaleStage.PreSale;
+    // ICO sateg two opening time - 01.08.2022 GMT+0400 (Armenia Standard Time)
+    uint256 stageTwoOpeningTime = 1659297600;
+
+    // ICO sateg two opening time - 01.09.2022 GMT+0400 (Armenia Standard Time)
+    uint256 stageThreeOpeningTime = 1661976000;
+
+    // ICO closing - 01.10.2022 GMT+0400 (Armenia Standard Time)
+    uint256 stageThreeClosingTime = 1664568000;
 
     constructor(
         uint256 _fullTokenAmount,
-        uint256 _openingTime,
-        uint256 _closingTime,
         uint256 _tokenRate,
         address payable _wallet,
         address _tokenAddress
     )
         Crowdsale(_tokenRate, _wallet, IERC20(_tokenAddress))
-        TimedCrowdsale(_openingTime, _closingTime)
+        TimedCrowdsale(stageOneOpeningTime, stageThreeClosingTime)
     {
         require(_fullTokenAmount > 0, "Invalid Token amount");
-        require(_tokenAddress != address(0), "Invalid address");
-        tokenAddress = _tokenAddress;
     }
 
-    /**
-     * @dev Allows admin to update the crowdsale stage
-     * @param _stage Crowdsale stage
-     */
-    function setCrowdsaleStage(uint256 _stage) public onlyOwner {
-        if (uint256(CrowdsaleStage.PreSale) == _stage) {
-            stage = CrowdsaleStage.PreSale;
-        } else if (uint256(CrowdsaleStage.ICO) == _stage) {
-            stage = CrowdsaleStage.ICO;
-        }
-    }
-
-    function _getTokenAmount(uint256 weiAmount) internal view override returns (uint256) {
-
+    function _getTokenAmount(uint256 weiAmount)
+        internal
+        view
+        override
+        returns (uint256)
+    {
         uint256 tokensToBuy;
         uint256 decimals = STMPToken(address(getToken())).decimals();
 
-        if (stage == CrowdsaleStage.PreSale) {
-            tokensToBuy = ((weiAmount * (10**decimals)) / 1 ether) * ratePreSale;
-            if (tokenRaised() + tokensToBuy > stagePreSaleLimit) {
-                tokensToBuy = calculateExcessTokens(weiAmount, stagePreSaleLimit, 0, ratePreSale);
-             }
-        } else if (stage == CrowdsaleStage.ICO) {
-            if (tokenRaised() < stageOneLimit) {
-                tokensToBuy = ((weiAmount * (10**decimals)) / 1 ether) * rateOne;
-                if (tokenRaised() + tokensToBuy > stageOneLimit) {
-                    tokensToBuy = calculateExcessTokens(weiAmount, stageOneLimit, 1, rateOne);
-                }
-            } else if (tokenRaised() >= stageOneLimit && tokenRaised() < stageTwoLimit) {
-                tokensToBuy = ((weiAmount * (10**decimals)) / 1 ether) * rateTwo;
-                if (tokenRaised() + tokensToBuy > stageTwoLimit) {
-                    tokensToBuy = calculateExcessTokens(weiAmount, stageTwoLimit, 2, rateTwo);
-                }
-            } else if (tokenRaised() >= stageTwoLimit && tokenRaised() < stageThreeLimit) {
-                tokensToBuy = ((weiAmount * (10**decimals)) / 1 ether) * rateThree;
-                if (tokenRaised() + tokensToBuy > stageThreeLimit) {
-                    tokensToBuy = calculateExcessTokens(weiAmount, stageThreeLimit, 3, rateThree);
-                }
-            } else if (tokenRaised() >= stageThreeLimit) {
-                tokensToBuy = ((weiAmount * (10**decimals)) / 1 ether) * rateFour;
+        if (
+            tokenRaised() <= stageOneLimit &&
+            (block.timestamp >= stageOneOpeningTime && block.timestamp < stageTwoOpeningTime)
+        ) {
+            tokensToBuy =
+                ((weiAmount * (10**decimals)) / 1 ether) *
+                stageOneRate;
+            if (tokenRaised() + tokensToBuy > stageOneLimit) {
+                tokensToBuy = calculateExcessTokens(
+                    weiAmount,
+                    stageOneLimit,
+                    1,
+                    stageOneRate
+                );
+            }
+        } else if (
+            (tokenRaised() > stageOneLimit && tokenRaised() <= stageTwoLimit) &&
+            (block.timestamp >= stageTwoOpeningTime && block.timestamp < stageThreeOpeningTime)
+        ) {
+            tokensToBuy =
+                ((weiAmount * (10**decimals)) / 1 ether) *
+                stageTwoRate;
+            if (tokenRaised() + tokensToBuy > stageTwoLimit) {
+                tokensToBuy = calculateExcessTokens(
+                    weiAmount,
+                    stageTwoLimit,
+                    2,
+                    stageTwoRate
+                );
+            }
+        } else if (
+            (tokenRaised() > stageTwoLimit && tokenRaised() <= stageThreeLimit) &&
+            (block.timestamp >= stageThreeOpeningTime && block.timestamp < stageThreeClosingTime)
+        ) {
+            tokensToBuy =
+                ((weiAmount * (10**decimals)) / 1 ether) *
+                stageTwoRate;
+            if (tokenRaised() + tokensToBuy > stageTwoLimit) {
+                tokensToBuy = calculateExcessTokens(
+                    weiAmount,
+                    stageTwoLimit,
+                    2,
+                    stageTwoRate
+                );
             }
         }
         return tokensToBuy;
@@ -125,7 +137,10 @@ contract STMPCrowdsale is Crowdsale, TimedCrowdsale, Ownable {
         bool returnTokens = false;
 
         if (currentStage != 4 || currentStage != 0) {
-            nextStageTokens = calculateStageTokens(nextStageWei, currentStage + 1);
+            nextStageTokens = calculateStageTokens(
+                nextStageWei,
+                currentStage + 1
+            );
         } else {
             returnTokens = true;
         }
@@ -142,17 +157,13 @@ contract STMPCrowdsale is Crowdsale, TimedCrowdsale, Ownable {
     {
         require(weiPaid > 0);
         require(currentStage >= 0 && currentStage <= 4);
-        
-        if (currentStage == 0) {
-            calculatedTokens = weiPaid * ratePreSale;
-        } else if (currentStage == 1) {
-            calculatedTokens = weiPaid * rateOne;
+
+        if (currentStage == 1) {
+            calculatedTokens = weiPaid * stageOneRate;
         } else if (currentStage == 2) {
-            calculatedTokens = weiPaid * rateTwo;
+            calculatedTokens = weiPaid * stageTwoRate;
         } else if (currentStage == 3) {
-            calculatedTokens = weiPaid * rateThree;
-        } else {
-            calculatedTokens = weiPaid * rateFour;
-        }
+            calculatedTokens = weiPaid * stageThreeRate;
+        } 
     }
 }

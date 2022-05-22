@@ -7,8 +7,11 @@ import "@openzeppelin/contracts/security/Pausable.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract STMPToken is ERC20, Pausable, Ownable {
+
+    // All existing token amount
     uint256 public tokenAmount;
-    uint256 public closingTime;
+
+    // Crowdsale contract address
     address public crowdsaleAddress;
 
     // The treasure address
@@ -17,48 +20,35 @@ contract STMPToken is ERC20, Pausable, Ownable {
     // The tokens already used for the presale buyers
     uint256 public tokensDistributedPresale = 0;
 
-    // The tokens already used for the ICO buyers
-    uint256 public tokensDistributedCrowdsale = 0;
-
     // The maximum amount of tokens for the presale investors
     uint256 public limitPresale = 3e24;
-
-    // The maximum amount of tokens sold in the crowdsale
-    uint256 public limitCrowdsale = 800e24;
 
     modifier onlyCrowdsale() {
         require(msg.sender == crowdsaleAddress);
         _;
     }
 
-    modifier afterCrowdsale() {
-        require(
-            block.timestamp > closingTime || msg.sender == crowdsaleAddress
-        );
-        _;
-    }
-
     constructor(
         uint256 _tokenAmount,
-        uint256 _closingTime,
         string memory name,
         string memory symbol
     ) ERC20(name, symbol) {
-        require(_closingTime > 0 && tokenAmount > 0);
-        closingTime = _closingTime;
+        require(tokenAmount > 0);
         tokenAmount = _tokenAmount;
 
         _mint(treasuryAddress, tokenAmount);
         _pause();
     }
 
+    // TODO: We can't set crowdsale as object is paused in the constructor.
     function setCrowdsale(address _crowdsaleAddress)
         public
         onlyOwner
-        whenNotPaused
+        whenPaused
     {
         require(_crowdsaleAddress != address(0));
         crowdsaleAddress = _crowdsaleAddress;
+        approve(crowdsaleAddress, tokenAmount);
     }
 
     /**
@@ -79,31 +69,6 @@ contract STMPToken is ERC20, Pausable, Ownable {
         require(tokensDistributedPresale + numberOfTokens < limitPresale);
 
         tokensDistributedPresale = tokensDistributedPresale + numberOfTokens;
-
-        transferFrom(treasuryAddress, _buyer, numberOfTokens);
-    }
-
-    /**
-     * @notice Distributes the ICO tokens. Only the crowdsale address can execute this
-     * @param _buyer The buyer address
-     * @param numberOfTokens The amount of tokens to send to that address
-     */
-    function distributeICOTokens(address _buyer, uint256 numberOfTokens)
-        external
-        onlyCrowdsale
-        whenPaused
-    {
-        require(msg.sender != address(0));
-        require(_buyer != address(0));
-        require(numberOfTokens > 0);
-
-        // Check that the limit of 50M ICO tokens hasn't been met yet
-        require(tokensDistributedCrowdsale < limitCrowdsale);
-        require(tokensDistributedCrowdsale + numberOfTokens <= limitCrowdsale);
-
-        tokensDistributedCrowdsale =
-            tokensDistributedCrowdsale +
-            numberOfTokens;
 
         transferFrom(treasuryAddress, _buyer, numberOfTokens);
     }
