@@ -145,18 +145,6 @@ contract STMPCrowdsale is Crowdsale, TimedCrowdsale, Ownable {
         //TODO: should add logic for calculating tokens amount using sent usdcAmount and current usdc price from Oracle
     }
 
-    function _forwardFundsWithUSDC(uint256 usdcAmount)
-        internal
-        virtual
-        override
-    {
-        IERC20(usdcTokenAddress).transferFrom(
-            msg.sender,
-            usdcWallet(),
-            usdcAmount
-        );
-    }
-
     /**
      * @dev Validation of an incoming purchase. Use require statements to revert state when conditions are not met.
      * @param _beneficiary Address performing the token purchase

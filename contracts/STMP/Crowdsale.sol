@@ -160,7 +160,9 @@ contract Crowdsale is Context, ReentrancyGuard {
         (uint256 tokens, uint256 weiRefund) = _getTokenAmount(weiAmount);
 
         // update state
-        _weiRaised = _weiRaised + weiAmount - weiRefund;
+        weiAmount = weiAmount - weiRefund;
+
+        _weiRaised = _weiRaised + weiAmount;
         _tokenRaised = _tokenRaised + tokens;
 
         _processPurchase(beneficiary, tokens, weiRefund);
@@ -187,7 +189,9 @@ contract Crowdsale is Context, ReentrancyGuard {
         (uint256 tokens, uint256 usdcRefund) = _getTokenAmountPayedWithUsdc(usdcAmount);
 
         // update state
-        _usdcRaised = _usdcRaised + usdcAmount - usdcRefund;
+        usdcAmount = usdcAmount - usdcRefund;
+
+        _usdcRaised = _usdcRaised + usdcAmount;
         _tokenRaised = _tokenRaised + tokens;
 
         _processPurchaseWithUsdc(beneficiary, tokens, usdcRefund);
