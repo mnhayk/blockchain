@@ -128,14 +128,6 @@ contract Crowdsale is Context, ReentrancyGuard {
     }
 
     /**
-     * @param rate_ number of token units a buyer gets per wei.
-     */
-    function setRate(uint256 rate_) public {
-        require(rate_ > 0, "Rate should be positive");
-        _rate = rate_;
-    }
-
-    /**
      * @return the amount of wei raised.
      */
     function weiRaised() public view returns (uint256) {
