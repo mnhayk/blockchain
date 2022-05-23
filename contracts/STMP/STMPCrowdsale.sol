@@ -41,15 +41,6 @@ contract STMPCrowdsale is Crowdsale, TimedCrowdsale, Ownable {
     // ICO closing - 01.10.2022 GMT+0400 (Armenia Standard Time)
     uint256 stageThreeClosingTime = 1664568000;
 
-    // Variable showing whether should be done refund for exceeding money
-    bool private shouldRefund = false;
-
-    // Address for investor for refunding exceeding money
-    address private investorAddressForRefund;
-
-    // Exceeding money value
-    uint256 private refundValue;
-
     // USDC address
     address public usdcTokenAddress =
         0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
@@ -74,15 +65,20 @@ contract STMPCrowdsale is Crowdsale, TimedCrowdsale, Ownable {
     }
 
     /**
-     * @dev Calculate token amount which should be transfered to investor
-     * @param weiAmount Amount of wei contributed
+     * @dev Override to extend the way in which ether is converted to tokens.
+     * @param weiAmount Value in wei to be converted into tokens
+     * @return tokenAmount tokenAmount of tokens that can be purchased with the specified _weiAmount
+     * @return weiRefund amount of wei which is refunded because of exceeding limit
      */
     function _getTokenAmount(uint256 weiAmount)
         internal
+        view
+        virtual
         override
-        returns (uint256)
+        returns (uint256 tokenAmount, uint256 weiRefund)
     {
         uint256 tokensToBuy;
+        uint256 weiShouldRefund;
         uint256 decimals = STMPToken(address(token())).decimals();
 
         if (
@@ -90,11 +86,11 @@ contract STMPCrowdsale is Crowdsale, TimedCrowdsale, Ownable {
             (block.timestamp >= stageOneOpeningTime &&
                 block.timestamp < stageTwoOpeningTime)
         ) {
-            tokensToBuy =
+            tokenAmount =
                 ((weiAmount * (10**decimals)) / 1 ether) *
                 stageOneRate;
             if (tokenRaised() + tokensToBuy > stageOneLimit) {
-                tokensToBuy = calculateExcessTokens(
+                (tokensToBuy, weiShouldRefund) = calculateExcessTokens(
                     weiAmount,
                     stageOneLimit,
                     1,
@@ -110,7 +106,7 @@ contract STMPCrowdsale is Crowdsale, TimedCrowdsale, Ownable {
                 ((weiAmount * (10**decimals)) / 1 ether) *
                 stageTwoRate;
             if (tokenRaised() + tokensToBuy > stageTwoLimit) {
-                tokensToBuy = calculateExcessTokens(
+                (tokensToBuy, weiShouldRefund) = calculateExcessTokens(
                     weiAmount,
                     stageTwoLimit,
                     2,
@@ -127,7 +123,7 @@ contract STMPCrowdsale is Crowdsale, TimedCrowdsale, Ownable {
                 ((weiAmount * (10**decimals)) / 1 ether) *
                 stageTwoRate;
             if (tokenRaised() + tokensToBuy > stageThreeLimit) {
-                tokensToBuy = calculateExcessTokens(
+                (tokensToBuy, weiShouldRefund) = calculateExcessTokens(
                     weiAmount,
                     stageThreeLimit,
                     3,
@@ -135,14 +131,16 @@ contract STMPCrowdsale is Crowdsale, TimedCrowdsale, Ownable {
                 );
             }
         }
-        return tokensToBuy;
+        tokenAmount = tokensToBuy;
+        weiRefund = weiShouldRefund;
     }
 
     function _getTokenAmountPayedWithUsdc(uint256 usdcAmount)
         internal
+        view
         virtual
         override
-        returns (uint256)
+        returns (uint256 tokenAmount, uint256 usdcRefund)
     {
         //TODO: should add logic for calculating tokens amount using sent usdcAmount and current usdc price from Oracle
     }
@@ -172,31 +170,6 @@ contract STMPCrowdsale is Crowdsale, TimedCrowdsale, Ownable {
     }
 
     /**
-     * @dev Executed when a purchase has been validated and is ready to be executed. Doesn't necessarily emit/send
-     * tokens.
-     * @param beneficiary Address receiving the tokens
-     * @param tokenAmount Number of tokens to be purchased
-     */
-    function _processPurchase(address beneficiary, uint256 tokenAmount)
-        internal
-        override
-    {
-        super._processPurchase(beneficiary, tokenAmount);
-
-        if (shouldRefund) {
-            require(beneficiary == investorAddressForRefund);
-            (bool success, ) = investorAddressForRefund.call{
-                value: refundValue
-            }("");
-            require(success, "Refund failed");
-
-            shouldRefund = false;
-            investorAddressForRefund = address(0);
-            refundValue = 0;
-        }
-    }
-
-    /**
      * @dev Calculate exceeding token amount for current stage
      * @param amount Amount of wei contributed
      * @param currentStageLimit Current stage maximum limit
@@ -208,11 +181,12 @@ contract STMPCrowdsale is Crowdsale, TimedCrowdsale, Ownable {
         uint256 currentStageLimit,
         uint256 currentStage,
         uint256 _rate
-    ) private returns (uint256 totalTokens) {
+    ) private view returns (uint256 totalTokens, uint256 weiRefund) {
         uint256 currentStageWei = (currentStageLimit - tokenRaised()) / _rate;
         uint256 nextStageWei = amount - currentStageWei;
         uint256 nextStageTokens = 0;
         bool returnTokens = false;
+        weiRefund = 0;
 
         if (currentStage != 3) {
             nextStageTokens = calculateStageTokens(
@@ -224,10 +198,7 @@ contract STMPCrowdsale is Crowdsale, TimedCrowdsale, Ownable {
         }
 
         if (returnTokens) {
-            shouldRefund = true;
-
-            investorAddressForRefund = msg.sender;
-            refundValue = nextStageWei;
+            weiRefund = nextStageWei;
         }
 
         totalTokens = currentStageLimit - tokenRaised() + nextStageTokens;

@@ -156,14 +156,14 @@ contract Crowdsale is Context, ReentrancyGuard {
         _preValidatePurchase(beneficiary, weiAmount);
 
         // calculate token amount to be created
-        // TODO: I believe we should check refundable part as well and subtract from 'weiAmount'
-        uint256 tokens = _getTokenAmount(weiAmount);
+        //TODO, Added by Hayk should be discussed refunded part
+        (uint256 tokens, uint256 weiRefund) = _getTokenAmount(weiAmount);
 
         // update state
-        _weiRaised = _weiRaised + weiAmount;
+        _weiRaised = _weiRaised + weiAmount - weiRefund;
         _tokenRaised = _tokenRaised + tokens;
 
-        _processPurchase(beneficiary, tokens);
+        _processPurchase(beneficiary, tokens, weiRefund);
         emit TokensPurchased(_msgSender(), beneficiary, weiAmount, tokens);
 
         _updatePurchasingState(beneficiary, weiAmount);
@@ -184,13 +184,13 @@ contract Crowdsale is Context, ReentrancyGuard {
 
         // calculate token amount to be created
         // TODO: I believe we should check refundable part as well and subtract from 'usdcAmount'
-        uint256 tokens = _getTokenAmountPayedWithUsdc(usdcAmount);
+        (uint256 tokens, uint256 usdcRefund) = _getTokenAmountPayedWithUsdc(usdcAmount);
 
         // update state
-        _usdcRaised = _usdcRaised + usdcAmount;
+        _usdcRaised = _usdcRaised + usdcAmount - usdcRefund;
         _tokenRaised = _tokenRaised + tokens;
 
-        _processPurchase(beneficiary, tokens);
+        _processPurchaseWithUsdc(beneficiary, tokens, usdcRefund);
         emit TokensPurchasedWithUSDC(_msgSender(), beneficiary, usdcAmount, tokens);
 
         _updatePurchasingState(beneficiary, usdcAmount);
@@ -240,8 +240,24 @@ contract Crowdsale is Context, ReentrancyGuard {
      * @param beneficiary Address receiving the tokens
      * @param tokenAmount Number of tokens to be purchased
      */
-    function _processPurchase(address beneficiary, uint256 tokenAmount) internal virtual {
+    function _processPurchase(address beneficiary, uint256 tokenAmount, uint256 weiRefund) internal virtual {
         _deliverTokens(beneficiary, tokenAmount);
+
+        (bool success, ) = beneficiary.call{value: weiRefund}("");
+        require(success, "Refund failed");
+    }
+
+    /**
+     * @dev Executed when a purchase has been validated and is ready to be executed. Doesn't necessarily emit/send
+     * tokens.
+     * @param beneficiary Address receiving the tokens
+     * @param tokenAmount Number of tokens to be purchased
+     */
+    function _processPurchaseWithUsdc(address beneficiary, uint256 tokenAmount, uint256 usdcRefund) internal virtual {
+        _deliverTokens(beneficiary, tokenAmount);
+
+        //TODO: should transfer usdc back to beneficiary
+
     }
 
     /**
@@ -257,20 +273,20 @@ contract Crowdsale is Context, ReentrancyGuard {
     /**
      * @dev Override to extend the way in which ether is converted to tokens.
      * @param weiAmount Value in wei to be converted into tokens
-     * @return Number of tokens that can be purchased with the specified _weiAmount
+     * @return tokenAmount tokenAmount of tokens that can be purchased with the specified _weiAmount
+     * @return weiRefund amount of wei which is refunded because of exceeding limit
      */
-    function _getTokenAmount(uint256 weiAmount) internal virtual returns (uint256) {
-        return weiAmount * _rate;
+    function _getTokenAmount(uint256 weiAmount) internal view virtual returns (uint256 tokenAmount, uint256 weiRefund) {
+        // solhint-disable-previous-line no-empty-blocks
     }
 
     /**
      * @dev Override to extend the way in which USDC is converted to tokens.
-     * @param usdcAmount Amount of USDC to be converted into tokens
-     * @return Number of tokens that can be purchased with the specified usdcAmount
+     * @return tokenAmount tokenAmount of tokens that can be purchased with the specified usdc amount
+     * @return usdcRefund amount of usdc which is refunded because of exceeding limit
      */
-    function _getTokenAmountPayedWithUsdc(uint256 usdcAmount) internal virtual returns (uint256) {
-        //TODO: should be checked what to return
-        return usdcAmount;
+    function _getTokenAmountPayedWithUsdc(uint256 usdcAmount) internal view virtual returns (uint256 tokenAmount, uint256 usdcRefund) {
+        // solhint-disable-previous-line no-empty-blocks
     }
 
     /**
