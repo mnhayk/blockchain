@@ -211,7 +211,7 @@ contract Crowdsale is Context, ReentrancyGuard {
 
         _updatePurchasingState(beneficiary, usdcAmount);
 
-        _forwardFundsWithUSDC(beneficiary, usdcAmount, usdcRefund);
+        _forwardFundsWithUSDC(beneficiary, usdcAmount);
         _postValidatePurchase(beneficiary, usdcAmount);
     }
 
@@ -306,10 +306,8 @@ contract Crowdsale is Context, ReentrancyGuard {
      * @dev Determines how USDC is stored/forwarded on purchases.
      * @param beneficiary Address sending/receinving the tokens
      * @param usdcAmount Amount of USDC to saved
-     * @param refundAmount Amount of USDC to refund
      */
-    function _forwardFundsWithUSDC(address beneficiary, uint256 usdcAmount, uint256 refundAmount) internal virtual {
+    function _forwardFundsWithUSDC(address beneficiary, uint256 usdcAmount) internal virtual {
         usdcAddress().transferFrom(beneficiary, usdcWallet(), usdcAmount);
-        usdcAddress().transferFrom(usdcWallet(), beneficiary, refundAmount);
     }
 }
