@@ -19,15 +19,15 @@ contract STMPCrowdsale is Crowdsale, TimedCrowdsale, Ownable {
 
     // ICO stage one token maximum limit
     uint256 public stageOneLimit =
-        150e6 * (10**(STMPToken(address(token())).decimals()));
+        150e6 * (10**(STMPToken(address(tokenAddress)).decimals()));
 
     // ICO stage two token maximum limit
     uint256 public stageTwoLimit =
-        300e6 * (10**(STMPToken(address(token())).decimals()));
+        300e6 * (10**(STMPToken(address(tokenAddress)).decimals()));
 
     // ICO stage two token maximum limit
     uint256 public stageThreeLimit =
-        450e6 * (10**(STMPToken(address(token())).decimals()));
+        450e6 * (10**(STMPToken(address(tokenAddress)).decimals()));
 
     // ICO sateg one opening time - 01.07.2022 GMT+0400 (Armenia Standard Time)
     uint256 stageOneOpeningTime = 1656619200;
@@ -43,23 +43,19 @@ contract STMPCrowdsale is Crowdsale, TimedCrowdsale, Ownable {
 
     /**
      * @dev Constructor for ICOCrowdsale
-     * @param fullTokenAmount_ Token Amount during the ICO
-     * @param wallet_ Crowdsale wallet
-     * @param usdcWallet_ Crowdsale wallet
+     * @param _walletAddress Crowdsale wallet
+     * @param _usdcWalletAddress Crowdsale wallet
      * @param tokenAddress_ Token address for crowdsale
      */
     constructor(
-        uint256 fullTokenAmount_,
-        address payable wallet_,
-        address usdcWallet_,
+        address payable _walletAddress,
+        address _usdcWalletAddress,
         address tokenAddress_,
         address usdcTokenAddress_
     )
-        Crowdsale(stageOneRate, wallet_, usdcWallet_, IERC20(tokenAddress_), IERC20(usdcTokenAddress_))
+        Crowdsale(_walletAddress, _usdcWalletAddress, IERC20(tokenAddress_), IERC20(usdcTokenAddress_))
         TimedCrowdsale(stageOneOpeningTime, stageThreeClosingTime)
-    {
-        require(fullTokenAmount_ > 0, "Invalid Token amount");
-    }
+    {}
 
     /**
      * @dev Override to extend the way in which ether is converted to tokens.
@@ -76,18 +72,21 @@ contract STMPCrowdsale is Crowdsale, TimedCrowdsale, Ownable {
     {
         uint256 tokensToBuy;
         uint256 weiShouldRefund;
-        uint256 decimals = STMPToken(address(token())).decimals();
+        uint256 decimals = STMPToken(address(tokenAddress)).decimals();
 
+        //TODO: should be fixed (limit is ok, time is not ok should go next stage)
+        //TODO: make _calculateExcessTokens should be called once
+        //TODO: Add Enum for different stages
         if (
-            tokenRaised() <= stageOneLimit &&
+            tokenRaised < stageOneLimit &&
             (block.timestamp >= stageOneOpeningTime &&
                 block.timestamp < stageTwoOpeningTime)
         ) {
-            tokenAmount =
+            tokensToBuy =
                 ((weiAmount * (10**decimals)) / 1 ether) *
                 stageOneRate;
-            if (tokenRaised() + tokensToBuy > stageOneLimit) {
-                (tokensToBuy, weiShouldRefund) = calculateExcessTokens(
+            if (tokenRaised + tokensToBuy > stageOneLimit) {
+                (tokensToBuy, weiShouldRefund) = _calculateExcessTokens(
                     weiAmount,
                     stageOneLimit,
                     1,
@@ -95,15 +94,15 @@ contract STMPCrowdsale is Crowdsale, TimedCrowdsale, Ownable {
                 );
             }
         } else if (
-            (tokenRaised() > stageOneLimit && tokenRaised() <= stageTwoLimit) &&
+            (tokenRaised >= stageOneLimit && tokenRaised < stageTwoLimit) &&
             (block.timestamp >= stageTwoOpeningTime &&
                 block.timestamp < stageThreeOpeningTime)
         ) {
             tokensToBuy =
                 ((weiAmount * (10**decimals)) / 1 ether) *
                 stageTwoRate;
-            if (tokenRaised() + tokensToBuy > stageTwoLimit) {
-                (tokensToBuy, weiShouldRefund) = calculateExcessTokens(
+            if (tokenRaised + tokensToBuy > stageTwoLimit) {
+                (tokensToBuy, weiShouldRefund) = _calculateExcessTokens(
                     weiAmount,
                     stageTwoLimit,
                     2,
@@ -111,16 +110,16 @@ contract STMPCrowdsale is Crowdsale, TimedCrowdsale, Ownable {
                 );
             }
         } else if (
-            (tokenRaised() > stageTwoLimit &&
-                tokenRaised() <= stageThreeLimit) &&
+            (tokenRaised > stageTwoLimit &&
+                tokenRaised <= stageThreeLimit) &&
             (block.timestamp >= stageThreeOpeningTime &&
                 block.timestamp < stageThreeClosingTime)
         ) {
             tokensToBuy =
                 ((weiAmount * (10**decimals)) / 1 ether) *
                 stageTwoRate;
-            if (tokenRaised() + tokensToBuy > stageThreeLimit) {
-                (tokensToBuy, weiShouldRefund) = calculateExcessTokens(
+            if (tokenRaised + tokensToBuy > stageThreeLimit) {
+                (tokensToBuy, weiShouldRefund) = _calculateExcessTokens(
                     weiAmount,
                     stageThreeLimit,
                     3,
@@ -161,20 +160,20 @@ contract STMPCrowdsale is Crowdsale, TimedCrowdsale, Ownable {
      * @param currentStage Current stage index
      * @param _rate Current stage rate
      */
-    function calculateExcessTokens(
+    function _calculateExcessTokens(
         uint256 amount,
         uint256 currentStageLimit,
         uint256 currentStage,
         uint256 _rate
     ) private view returns (uint256 totalTokens, uint256 weiRefund) {
-        uint256 currentStageWei = (currentStageLimit - tokenRaised()) / _rate;
+        uint256 currentStageWei = (currentStageLimit - tokenRaised) / _rate;
         uint256 nextStageWei = amount - currentStageWei;
         uint256 nextStageTokens = 0;
         bool returnTokens = false;
         weiRefund = 0;
 
         if (currentStage != 3) {
-            nextStageTokens = calculateStageTokens(
+            nextStageTokens = _calculateStageTokens(
                 nextStageWei,
                 currentStage + 1
             );
@@ -186,7 +185,7 @@ contract STMPCrowdsale is Crowdsale, TimedCrowdsale, Ownable {
             weiRefund = nextStageWei;
         }
 
-        totalTokens = currentStageLimit - tokenRaised() + nextStageTokens;
+        totalTokens = currentStageLimit - tokenRaised + nextStageTokens;
     }
 
     /**
@@ -194,7 +193,7 @@ contract STMPCrowdsale is Crowdsale, TimedCrowdsale, Ownable {
      * @param weiPaid Amount of wei contributed
      * @param stage stage index
      */
-    function calculateStageTokens(uint256 weiPaid, uint256 stage)
+    function _calculateStageTokens(uint256 weiPaid, uint256 stage)
         private
         view
         returns (uint256 calculatedTokens)
@@ -202,7 +201,7 @@ contract STMPCrowdsale is Crowdsale, TimedCrowdsale, Ownable {
         require(weiPaid > 0);
         require(stage >= 0 && stage <= 3);
 
-        uint256 decimals = STMPToken(address(token())).decimals();
+        uint256 decimals = STMPToken(address(tokenAddress)).decimals();
 
         if (stage == 1) {
             calculatedTokens =

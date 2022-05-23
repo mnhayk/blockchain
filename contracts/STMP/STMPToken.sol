@@ -9,75 +9,99 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 contract STMPToken is ERC20, Pausable, Ownable {
 
     // All existing token amount
-    uint256 public tokenAmount;
-
-    // Crowdsale contract address
-    address public crowdsaleAddress;
-
-    // The treasure address
-    address public treasuryAddress;
+    uint256 public tokenAmount = 1000e6;
 
     // The tokens already used for the presale buyers
     uint256 public tokensDistributedPresale = 0;
 
     // The maximum amount of tokens for the presale investors
-    uint256 public limitPresale = 3e24;
+    uint256 public limitPresale = 3e24; //TODO: this should be clarified
+
+    // Crowdsale contract address
+    address public crowdsaleAddress;
+
+    // The treasury address
+    address public treasuryAddress;
 
     modifier onlyCrowdsale() {
         require(msg.sender == crowdsaleAddress);
         _;
     }
 
+    /**
+     * @param _name The distributed token name
+     * @param _symbol The distributed token symbol
+     */
     constructor(
-        uint256 _tokenAmount,
         string memory _name,
         string memory _symbol
     ) ERC20(_name, _symbol) {
-        require(tokenAmount > 0);
-        tokenAmount = _tokenAmount;
-
         _mint(treasuryAddress, tokenAmount);
         _pause();
     }
 
-    // TODO: We can't set crowdsale as object is paused in the constructor.
-    function setCrowdsale(address _crowdsaleAddress)
-        public
+    /**
+     * @dev Set crowdsale address. Only the owner can do this
+     * @param _crowdsaleAddress The address of Crowdsale contract
+     */
+    function setCrowdsaleAddress(address _crowdsaleAddress)
+        external
         onlyOwner
-        whenPaused
     {
         require(_crowdsaleAddress != address(0));
         crowdsaleAddress = _crowdsaleAddress;
-        approve(crowdsaleAddress, tokenAmount);
     }
 
     /**
-     * @notice Distributes the presale numberOfTokens. Only the owner can do this
+     * @dev Distributes the presale numberOfTokens. Only the owner can do this
      * @param _buyer The address of the buyer
-     * @param numberOfTokens The amount of tokens corresponding to that buyer
+     * @param _numberOfTokens The amount of tokens corresponding to that buyer
      */
-    function distributePresaleTokens(address _buyer, uint256 numberOfTokens)
+    function distributePresaleTokens(address _buyer, uint256 _numberOfTokens)
         external
         onlyOwner
-        whenPaused
     {
         require(_buyer != address(0));
-        require(numberOfTokens > 0 && numberOfTokens <= limitPresale);
+        require(_numberOfTokens > 0 && _numberOfTokens <= limitPresale);
 
-        // Check that the limit of 3M presale numberOfTokens hasn't been met yet
-        require(tokensDistributedPresale < limitPresale);
-        require(tokensDistributedPresale + numberOfTokens < limitPresale);
+        // Check that the limit of presale numberOfTokens hasn't been met yet
+        require(tokensDistributedPresale + _numberOfTokens <= limitPresale);
 
-        tokensDistributedPresale = tokensDistributedPresale + numberOfTokens;
+        tokensDistributedPresale += _numberOfTokens;
 
-        transferFrom(treasuryAddress, _buyer, numberOfTokens);
+        //TODO: Make sure treasury address approves contract to transfer
+        transferFrom(treasuryAddress, _buyer, _numberOfTokens);
     }
 
-    function emergencyExtract() external onlyOwner {
+    /**
+     * @dev Function for withdrawing all existing ether: Only the owner can do this
+     */
+    function withdraw() external onlyOwner {
         (bool success, ) = owner().call{value: address(this).balance}("");
         require(success, "Failed to withdraw Ether");
     }
 
+    /**
+     * @dev Pausing the token minting/approving/transfering. Only the owner can do this
+     */
+    function puase() external onlyOwner {
+        _pause();
+    }
+
+    /**
+     * @dev Unpausing the token minting/approving/transfering. Only the owner can do this
+     */
+    function unpuase() external onlyOwner {
+        _unpause();
+    }
+
+    /**
+     * @dev Hook that is called before any transfer of tokens. This includes
+     * minting and burning.
+     * @param from The address who transfer tokens
+     * @param to The address who received tokens
+     * @param amount The amount of tokens
+     */
     function _beforeTokenTransfer(
         address from,
         address to,
