@@ -30,9 +30,9 @@ contract STMPToken is ERC20, Pausable, Ownable {
 
     constructor(
         uint256 _tokenAmount,
-        string memory name,
-        string memory symbol
-    ) ERC20(name, symbol) {
+        string memory _name,
+        string memory _symbol
+    ) ERC20(_name, _symbol) {
         require(tokenAmount > 0);
         tokenAmount = _tokenAmount;
 
