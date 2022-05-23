@@ -3,11 +3,12 @@
 pragma solidity ^0.8.10;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/extensions/draft-ERC20Permit.sol";
+import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Votes.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-contract STMPToken is ERC20, Pausable, Ownable {
-
+contract STMPToken is ERC20, ERC20Permit, ERC20Votes, Pausable, Ownable {
     // All existing token amount
     uint256 public tokenAmount = 1000e6;
 
@@ -32,10 +33,10 @@ contract STMPToken is ERC20, Pausable, Ownable {
      * @param _name The distributed token name
      * @param _symbol The distributed token symbol
      */
-    constructor(
-        string memory _name,
-        string memory _symbol
-    ) ERC20(_name, _symbol) {
+    constructor(string memory _name, string memory _symbol)
+        ERC20(_name, _symbol)
+        ERC20Permit(_name)
+    {
         _mint(treasuryAddress, tokenAmount);
         _pause();
     }
@@ -44,10 +45,7 @@ contract STMPToken is ERC20, Pausable, Ownable {
      * @dev Set crowdsale address. Only the owner can do this
      * @param _crowdsaleAddress The address of Crowdsale contract
      */
-    function setCrowdsaleAddress(address _crowdsaleAddress)
-        external
-        onlyOwner
-    {
+    function setCrowdsaleAddress(address _crowdsaleAddress) external onlyOwner {
         require(_crowdsaleAddress != address(0));
         crowdsaleAddress = _crowdsaleAddress;
     }
@@ -93,6 +91,28 @@ contract STMPToken is ERC20, Pausable, Ownable {
      */
     function unpuase() external onlyOwner {
         _unpause();
+    }
+
+    function _mint(address to, uint256 amount)
+        internal
+        override(ERC20, ERC20Votes)
+    {
+        super._mint(to, amount);
+    }
+
+    function _burn(address account, uint256 amount)
+        internal
+        override(ERC20, ERC20Votes)
+    {
+        super._burn(account, amount);
+    }
+
+    function _afterTokenTransfer(
+        address from,
+        address to,
+        uint256 amount
+    ) internal override(ERC20, ERC20Votes) {
+        super._afterTokenTransfer(from, to, amount);
     }
 
     /**
