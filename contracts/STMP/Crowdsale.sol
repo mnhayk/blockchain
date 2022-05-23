@@ -28,11 +28,14 @@ contract Crowdsale is Context, ReentrancyGuard {
     // Amount of wei raised
     uint256 private _weiRaised;
 
-    // Amount of token raised  >>>> By Hayk
+    // Amount of token raised 
     uint256 private _tokenRaised;
 
-    // Amount of USDC token raised  >>>> By Hayk
+    // Amount of USDC token raised 
     uint256 private _usdcRaised;
+
+    // USD coin address
+    IERC20 private _usdcAddress;
 
     /**
      * Event for token purchase logging
@@ -61,16 +64,18 @@ contract Crowdsale is Context, ReentrancyGuard {
      * @param usdcWallet_ Address where collected USDC will be forwarded to
      * @param token_ Address of the token being sold
      */
-    constructor (uint256 rate_, address payable wallet_, address usdcWallet_, IERC20 token_)  {
+    constructor (uint256 rate_, address payable wallet_, address usdcWallet_, IERC20 token_, IERC20 usdcAddress_)  {
         require(rate_ > 0, "Crowdsale: rate is 0");
         require(wallet_ != address(0), "Crowdsale: wallet is the zero address");
         require(usdcWallet_ != address(0), "Crowdsale: usdc wallet is the zero address");
         require(address(token_) != address(0), "Crowdsale: token_ is the zero address");
+        require(address(usdcAddress_) != address(0), "Crowdsale: token_ is the zero address");
 
         _rate = rate_;
         _wallet = wallet_;
         _usdcWallet = usdcWallet_;
         _token = token_;
+        _usdcAddress = usdcAddress_;
     }
 
     /**
@@ -115,7 +120,13 @@ contract Crowdsale is Context, ReentrancyGuard {
         return _rate;
     }
 
-    // By Hayk
+    /**
+     * @return the number of token units a buyer gets per wei.
+     */
+    function usdcAddress() public view returns (IERC20) {
+        return _usdcAddress;
+    }
+
     /**
      * @param rate_ number of token units a buyer gets per wei.
      */
@@ -165,12 +176,13 @@ contract Crowdsale is Context, ReentrancyGuard {
         _weiRaised = _weiRaised + weiAmount;
         _tokenRaised = _tokenRaised + tokens;
 
-        _processPurchase(beneficiary, tokens, weiRefund);
+        //TODO: maybe we should change the place of thiss call as refund happens sooner than forwarding.
+        _processPurchase(beneficiary, tokens);
         emit TokensPurchased(_msgSender(), beneficiary, weiAmount, tokens);
 
         _updatePurchasingState(beneficiary, weiAmount);
 
-        _forwardFunds();
+        _forwardFunds(beneficiary, weiRefund);
         _postValidatePurchase(beneficiary, weiAmount);
     }
 
@@ -194,12 +206,12 @@ contract Crowdsale is Context, ReentrancyGuard {
         _usdcRaised = _usdcRaised + usdcAmount;
         _tokenRaised = _tokenRaised + tokens;
 
-        _processPurchaseWithUsdc(beneficiary, tokens, usdcRefund);
+        _processPurchase(beneficiary, tokens);
         emit TokensPurchasedWithUSDC(_msgSender(), beneficiary, usdcAmount, tokens);
 
         _updatePurchasingState(beneficiary, usdcAmount);
 
-        _forwardFundsWithUSDC(usdcAmount);
+        _forwardFundsWithUSDC(beneficiary, usdcAmount, usdcRefund);
         _postValidatePurchase(beneficiary, usdcAmount);
     }
 
@@ -244,24 +256,8 @@ contract Crowdsale is Context, ReentrancyGuard {
      * @param beneficiary Address receiving the tokens
      * @param tokenAmount Number of tokens to be purchased
      */
-    function _processPurchase(address beneficiary, uint256 tokenAmount, uint256 weiRefund) internal virtual {
+    function _processPurchase(address beneficiary, uint256 tokenAmount) internal virtual {
         _deliverTokens(beneficiary, tokenAmount);
-
-        (bool success, ) = beneficiary.call{value: weiRefund}("");
-        require(success, "Refund failed");
-    }
-
-    /**
-     * @dev Executed when a purchase has been validated and is ready to be executed. Doesn't necessarily emit/send
-     * tokens.
-     * @param beneficiary Address receiving the tokens
-     * @param tokenAmount Number of tokens to be purchased
-     */
-    function _processPurchaseWithUsdc(address beneficiary, uint256 tokenAmount, uint256 usdcRefund) internal virtual {
-        _deliverTokens(beneficiary, tokenAmount);
-
-        //TODO: should transfer usdc back to beneficiary
-
     }
 
     /**
@@ -295,16 +291,25 @@ contract Crowdsale is Context, ReentrancyGuard {
 
     /**
      * @dev Determines how ETH is stored/forwarded on purchases.
+     * @param beneficiary Address receinving the refunding
+     * @param weiRefund Amount of wei for refunding
      */
-    function _forwardFunds() internal virtual {
-        _wallet.transfer(msg.value);
+    function _forwardFunds(address beneficiary, uint256 weiRefund) internal virtual {
+        (bool success, ) = _wallet.call{value: msg.value}("");
+        require(success, "Transfer to wallet failed");
+
+        (bool successRefund, ) = beneficiary.call{value: weiRefund}("");
+        require(successRefund, "Refund failed");
     }
 
     /**
      * @dev Determines how USDC is stored/forwarded on purchases.
+     * @param beneficiary Address sending/receinving the tokens
      * @param usdcAmount Amount of USDC to saved
+     * @param refundAmount Amount of USDC to refund
      */
-    function _forwardFundsWithUSDC(uint256 usdcAmount) internal virtual {
-        // solhint-disable-previous-line no-empty-blocks
+    function _forwardFundsWithUSDC(address beneficiary, uint256 usdcAmount, uint256 refundAmount) internal virtual {
+        usdcAddress().transferFrom(beneficiary, usdcWallet(), usdcAmount);
+        usdcAddress().transferFrom(usdcWallet(), beneficiary, refundAmount);
     }
 }

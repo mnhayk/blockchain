@@ -41,10 +41,6 @@ contract STMPCrowdsale is Crowdsale, TimedCrowdsale, Ownable {
     // ICO closing - 01.10.2022 GMT+0400 (Armenia Standard Time)
     uint256 stageThreeClosingTime = 1664568000;
 
-    // USDC address
-    address public usdcTokenAddress =
-        0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
-
     /**
      * @dev Constructor for ICOCrowdsale
      * @param fullTokenAmount_ Token Amount during the ICO
@@ -56,9 +52,10 @@ contract STMPCrowdsale is Crowdsale, TimedCrowdsale, Ownable {
         uint256 fullTokenAmount_,
         address payable wallet_,
         address usdcWallet_,
-        address tokenAddress_
+        address tokenAddress_,
+        address usdcTokenAddress_
     )
-        Crowdsale(stageOneRate, wallet_, usdcWallet_, IERC20(tokenAddress_))
+        Crowdsale(stageOneRate, wallet_, usdcWallet_, IERC20(tokenAddress_), IERC20(usdcTokenAddress_))
         TimedCrowdsale(stageOneOpeningTime, stageThreeClosingTime)
     {
         require(fullTokenAmount_ > 0, "Invalid Token amount");
