@@ -13,6 +13,9 @@ contract Crowdsale is Context, ReentrancyGuard {
     // The token being sold
     IERC20 private _token;
 
+    // USD coin address
+    IERC20 private _usdcAddress;
+
     // Address where funds are collected
     address payable private _wallet;
 
@@ -33,9 +36,6 @@ contract Crowdsale is Context, ReentrancyGuard {
 
     // Amount of USDC token raised 
     uint256 private _usdcRaised;
-
-    // USD coin address
-    IERC20 private _usdcAddress;
 
     /**
      * Event for token purchase logging
