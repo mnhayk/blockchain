@@ -168,7 +168,6 @@ contract Crowdsale is Context, ReentrancyGuard {
         _weiRaised = _weiRaised + weiAmount;
         _tokenRaised = _tokenRaised + tokens;
 
-        //TODO: maybe we should change the place of thiss call as refund happens sooner than forwarding.
         _processPurchase(beneficiary, tokens);
         emit TokensPurchased(_msgSender(), beneficiary, weiAmount, tokens);
 
@@ -189,7 +188,6 @@ contract Crowdsale is Context, ReentrancyGuard {
         _preValidatePurchase(beneficiary, usdcAmount);
 
         // calculate token amount to be created
-        // TODO: I believe we should check refundable part as well and subtract from 'usdcAmount'
         (uint256 tokens, uint256 usdcRefund) = _getTokenAmountPayedWithUsdc(usdcAmount);
 
         // update state
