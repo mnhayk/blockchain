@@ -16,10 +16,8 @@ contract Crowdsale is Context, ReentrancyGuard {
     // Address where funds are collected
     address payable private _wallet;
 
-    //TODO: maybe we should have separate address for sending usdc value
-
-    // ERC20 token address
-    IERC20 private _paymentTokenAddress;
+    // Address where USD Coints are collected
+    address private _usdcWallet;
 
     // How many token units a buyer gets per wei.
     // The rate is the conversion between wei and the smallest and indivisible token unit.
@@ -55,23 +53,24 @@ contract Crowdsale is Context, ReentrancyGuard {
     event TokensPurchasedWithUSDC(address indexed purchaser, address indexed beneficiary, uint256 value, uint256 amount);
 
     /**
-     * @param rate Number of token units a buyer gets per wei
-     * @dev The rate is the conversion between wei and the smallest and indivisible
+     *@dev The rate is the conversion between wei and the smallest and indivisible
      * token unit. So, if you are using a rate of 1 with a ERC20Detailed token
      * with 3 decimals called TOK, 1 wei will give you 1 unit, or 0.001 TOK.
-     * @param wallet Address where collected funds will be forwarded to
-     * @param token Address of the token being sold
+     * @param rate_ Number of token units a buyer gets per wei
+     * @param wallet_ Address where collected funds will be forwarded to
+     * @param usdcWallet_ Address where collected USDC will be forwarded to
+     * @param token_ Address of the token being sold
      */
-    constructor (uint256 rate, address payable wallet, IERC20 paymentTokenAddress, IERC20 token)  {
-        require(rate > 0, "Crowdsale: rate is 0");
-        require(wallet != address(0), "Crowdsale: wallet is the zero address");
-        require(address(token) != address(0), "Crowdsale: token is the zero address");
-        require(address(paymentTokenAddress) != address(0), "Crowdsale: paymentTokenAddress is the zero address");
+    constructor (uint256 rate_, address payable wallet_, address usdcWallet_, IERC20 token_)  {
+        require(rate_ > 0, "Crowdsale: rate is 0");
+        require(wallet_ != address(0), "Crowdsale: wallet is the zero address");
+        require(usdcWallet_ != address(0), "Crowdsale: usdc wallet is the zero address");
+        require(address(token_) != address(0), "Crowdsale: token_ is the zero address");
 
-        _rate = rate;
-        _wallet = wallet;
-        _token = token;
-        _paymentTokenAddress = paymentTokenAddress;
+        _rate = rate_;
+        _wallet = wallet_;
+        _usdcWallet = usdcWallet_;
+        _token = token_;
     }
 
     /**
@@ -91,35 +90,38 @@ contract Crowdsale is Context, ReentrancyGuard {
     /**
      * @return the token being sold.
      */
-    function getToken() public view returns (IERC20) {
+    function token() public view returns (IERC20) {
         return _token;
     }
 
     /**
      * @return the address where funds are collected.
      */
-    function getWallet() public view returns (address payable) {
+    function wallet() public view returns (address payable) {
         return _wallet;
     }
 
     /**
-     * @return the address of USDC.
+     * @return the address where USDC are collected.
      */
-    function getPaymentTokenAddress() public view returns (IERC20) {
-        return _paymentTokenAddress;
+    function usdcWallet() public view returns (address) {
+        return _usdcWallet;
     }
 
     /**
      * @return the number of token units a buyer gets per wei.
      */
-    function getRate() public view returns (uint256) {
+    function rate() public view returns (uint256) {
         return _rate;
     }
 
     // By Hayk
-    function setRate(uint256 rate) public {
-        require(rate > 0, "Rate should be positive");
-        _rate = rate;
+    /**
+     * @param rate_ number of token units a buyer gets per wei.
+     */
+    function setRate(uint256 rate_) public {
+        require(rate_ > 0, "Rate should be positive");
+        _rate = rate_;
     }
 
     /**
@@ -182,7 +184,7 @@ contract Crowdsale is Context, ReentrancyGuard {
 
         // calculate token amount to be created
         // TODO: I believe we should check refundable part as well and subtract from 'usdcAmount'
-        uint256 tokens = _getTokenAmountWithUSDC(usdcAmount);
+        uint256 tokens = _getTokenAmountPayedWithUsdc(usdcAmount);
 
         // update state
         _usdcRaised = _usdcRaised + usdcAmount;
@@ -266,7 +268,7 @@ contract Crowdsale is Context, ReentrancyGuard {
      * @param usdcAmount Amount of USDC to be converted into tokens
      * @return Number of tokens that can be purchased with the specified usdcAmount
      */
-    function _getTokenAmountWithUSDC(uint256 usdcAmount) internal virtual returns (uint256) {
+    function _getTokenAmountPayedWithUsdc(uint256 usdcAmount) internal virtual returns (uint256) {
         //TODO: should be checked what to return
         return usdcAmount;
     }

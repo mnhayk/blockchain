@@ -37,7 +37,7 @@ abstract contract AllowanceCrowdsale is Crowdsale {
      * @return Amount of tokens left in the allowance
      */
     function remainingTokens() public view returns (uint256) {
-        return Math.min(getToken().balanceOf(_tokenWallet), getToken().allowance(_tokenWallet, address(this)));
+        return Math.min(token().balanceOf(_tokenWallet), token().allowance(_tokenWallet, address(this)));
     }
 
     /**
@@ -46,6 +46,6 @@ abstract contract AllowanceCrowdsale is Crowdsale {
      * @param tokenAmount Amount of tokens purchased
      */
     function _deliverTokens(address beneficiary, uint256 tokenAmount) internal override {
-        getToken().safeTransferFrom(_tokenWallet, beneficiary, tokenAmount);
+        token().safeTransferFrom(_tokenWallet, beneficiary, tokenAmount);
     }
 }

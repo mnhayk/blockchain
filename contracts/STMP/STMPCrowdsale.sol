@@ -19,15 +19,15 @@ contract STMPCrowdsale is Crowdsale, TimedCrowdsale, Ownable {
 
     // ICO stage one token maximum limit
     uint256 public stageOneLimit =
-        150e6 * (10**(STMPToken(address(getToken())).decimals()));
+        150e6 * (10**(STMPToken(address(token())).decimals()));
 
     // ICO stage two token maximum limit
     uint256 public stageTwoLimit =
-        300e6 * (10**(STMPToken(address(getToken())).decimals()));
+        300e6 * (10**(STMPToken(address(token())).decimals()));
 
     // ICO stage two token maximum limit
     uint256 public stageThreeLimit =
-        450e6 * (10**(STMPToken(address(getToken())).decimals()));
+        450e6 * (10**(STMPToken(address(token())).decimals()));
 
     // ICO sateg one opening time - 01.07.2022 GMT+0400 (Armenia Standard Time)
     uint256 stageOneOpeningTime = 1656619200;
@@ -51,23 +51,25 @@ contract STMPCrowdsale is Crowdsale, TimedCrowdsale, Ownable {
     uint256 private refundValue;
 
     // USDC address
-    address usdcAddress = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
+    address public usdcTokenAddress = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
 
     /**
      * @dev Constructor for ICOCrowdsale 
-     * @param _fullTokenAmount Token Amount during the ICO
-     * @param _wallet Crowdsale wallet
-     * @param _tokenAddress Token address for crowdsale
+     * @param fullTokenAmount_ Token Amount during the ICO
+     * @param wallet_ Crowdsale wallet
+     * @param usdcWallet_ Crowdsale wallet
+     * @param tokenAddress_ Token address for crowdsale
      */
     constructor(
-        uint256 _fullTokenAmount,
-        address payable _wallet,
-        address _tokenAddress
+        uint256 fullTokenAmount_,
+        address payable wallet_,
+        address usdcWallet_,
+        address tokenAddress_
     )
-        Crowdsale(stageOneRate, _wallet, IERC20(usdcAddress), IERC20(_tokenAddress))
+        Crowdsale(stageOneRate, wallet_, usdcWallet_, IERC20(tokenAddress_))
         TimedCrowdsale(stageOneOpeningTime, stageThreeClosingTime)
     {
-        require(_fullTokenAmount > 0, "Invalid Token amount");
+        require(fullTokenAmount_ > 0, "Invalid Token amount");
     }
 
     /**
@@ -80,7 +82,7 @@ contract STMPCrowdsale is Crowdsale, TimedCrowdsale, Ownable {
         returns (uint256)
     {
         uint256 tokensToBuy;
-        uint256 decimals = STMPToken(address(getToken())).decimals();
+        uint256 decimals = STMPToken(address(token())).decimals();
 
         if (
             tokenRaised() <= stageOneLimit &&
@@ -131,12 +133,12 @@ contract STMPCrowdsale is Crowdsale, TimedCrowdsale, Ownable {
         return tokensToBuy;
     }
 
-    function _getTokenAmountWithUSDC(uint256 usdcAmount) internal virtual override returns (uint256) {
+    function _getTokenAmountPayedWithUsdc(uint256 usdcAmount) internal virtual override returns (uint256) {
         //TODO: should add logic for calculating tokens amount using sent usdcAmount and current usdc price from Oracle
     }
 
     function _forwardFundsWithUSDC(uint256 usdcAmount) internal virtual override {
-        getPaymentTokenAddress().transferFrom(msg.sender, address(this), usdcAmount);
+        IERC20(usdcTokenAddress).transferFrom(msg.sender, address(this), usdcAmount);
     }
     /**
      * @dev Validation of an incoming purchase. Use require statements to revert state when conditions are not met.
@@ -214,7 +216,7 @@ contract STMPCrowdsale is Crowdsale, TimedCrowdsale, Ownable {
         require(weiPaid > 0);
         require(stage >= 0 && stage <= 3);
 
-        uint256 decimals = STMPToken(address(getToken())).decimals();
+        uint256 decimals = STMPToken(address(token())).decimals();
 
         if (stage == 1) {
             calculatedTokens = weiPaid * (10 ** decimals) / 1 ether * stageOneRate;
