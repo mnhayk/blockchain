@@ -51,10 +51,11 @@ contract STMPCrowdsale is Crowdsale, TimedCrowdsale, Ownable {
     uint256 private refundValue;
 
     // USDC address
-    address public usdcTokenAddress = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
+    address public usdcTokenAddress =
+        0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
 
     /**
-     * @dev Constructor for ICOCrowdsale 
+     * @dev Constructor for ICOCrowdsale
      * @param fullTokenAmount_ Token Amount during the ICO
      * @param wallet_ Crowdsale wallet
      * @param usdcWallet_ Crowdsale wallet
@@ -86,7 +87,8 @@ contract STMPCrowdsale is Crowdsale, TimedCrowdsale, Ownable {
 
         if (
             tokenRaised() <= stageOneLimit &&
-            (block.timestamp >= stageOneOpeningTime && block.timestamp < stageTwoOpeningTime)
+            (block.timestamp >= stageOneOpeningTime &&
+                block.timestamp < stageTwoOpeningTime)
         ) {
             tokensToBuy =
                 ((weiAmount * (10**decimals)) / 1 ether) *
@@ -101,7 +103,8 @@ contract STMPCrowdsale is Crowdsale, TimedCrowdsale, Ownable {
             }
         } else if (
             (tokenRaised() > stageOneLimit && tokenRaised() <= stageTwoLimit) &&
-            (block.timestamp >= stageTwoOpeningTime && block.timestamp < stageThreeOpeningTime)
+            (block.timestamp >= stageTwoOpeningTime &&
+                block.timestamp < stageThreeOpeningTime)
         ) {
             tokensToBuy =
                 ((weiAmount * (10**decimals)) / 1 ether) *
@@ -115,8 +118,10 @@ contract STMPCrowdsale is Crowdsale, TimedCrowdsale, Ownable {
                 );
             }
         } else if (
-            (tokenRaised() > stageTwoLimit && tokenRaised() <= stageThreeLimit) &&
-            (block.timestamp >= stageThreeOpeningTime && block.timestamp < stageThreeClosingTime)
+            (tokenRaised() > stageTwoLimit &&
+                tokenRaised() <= stageThreeLimit) &&
+            (block.timestamp >= stageThreeOpeningTime &&
+                block.timestamp < stageThreeClosingTime)
         ) {
             tokensToBuy =
                 ((weiAmount * (10**decimals)) / 1 ether) *
@@ -133,13 +138,27 @@ contract STMPCrowdsale is Crowdsale, TimedCrowdsale, Ownable {
         return tokensToBuy;
     }
 
-    function _getTokenAmountPayedWithUsdc(uint256 usdcAmount) internal virtual override returns (uint256) {
+    function _getTokenAmountPayedWithUsdc(uint256 usdcAmount)
+        internal
+        virtual
+        override
+        returns (uint256)
+    {
         //TODO: should add logic for calculating tokens amount using sent usdcAmount and current usdc price from Oracle
     }
 
-    function _forwardFundsWithUSDC(uint256 usdcAmount) internal virtual override {
-        IERC20(usdcTokenAddress).transferFrom(msg.sender, address(this), usdcAmount);
+    function _forwardFundsWithUSDC(uint256 usdcAmount)
+        internal
+        virtual
+        override
+    {
+        IERC20(usdcTokenAddress).transferFrom(
+            msg.sender,
+            usdcWallet(),
+            usdcAmount
+        );
     }
+
     /**
      * @dev Validation of an incoming purchase. Use require statements to revert state when conditions are not met.
      * @param _beneficiary Address performing the token purchase
@@ -152,12 +171,23 @@ contract STMPCrowdsale is Crowdsale, TimedCrowdsale, Ownable {
         super._preValidatePurchase(_beneficiary, _weiAmount);
     }
 
-    function _processPurchase(address beneficiary, uint256 tokenAmount) internal override {
+    /**
+     * @dev Executed when a purchase has been validated and is ready to be executed. Doesn't necessarily emit/send
+     * tokens.
+     * @param beneficiary Address receiving the tokens
+     * @param tokenAmount Number of tokens to be purchased
+     */
+    function _processPurchase(address beneficiary, uint256 tokenAmount)
+        internal
+        override
+    {
         super._processPurchase(beneficiary, tokenAmount);
 
         if (shouldRefund) {
             require(beneficiary == investorAddressForRefund);
-            (bool success, ) = investorAddressForRefund.call{value: refundValue}("");
+            (bool success, ) = investorAddressForRefund.call{
+                value: refundValue
+            }("");
             require(success, "Refund failed");
 
             shouldRefund = false;
@@ -193,7 +223,7 @@ contract STMPCrowdsale is Crowdsale, TimedCrowdsale, Ownable {
             returnTokens = true;
         }
 
-        if(returnTokens) {
+        if (returnTokens) {
             shouldRefund = true;
 
             investorAddressForRefund = msg.sender;
@@ -219,11 +249,17 @@ contract STMPCrowdsale is Crowdsale, TimedCrowdsale, Ownable {
         uint256 decimals = STMPToken(address(token())).decimals();
 
         if (stage == 1) {
-            calculatedTokens = weiPaid * (10 ** decimals) / 1 ether * stageOneRate;
+            calculatedTokens =
+                ((weiPaid * (10**decimals)) / 1 ether) *
+                stageOneRate;
         } else if (stage == 2) {
-            calculatedTokens = weiPaid * (10 ** decimals) / 1 ether * stageTwoRate;
+            calculatedTokens =
+                ((weiPaid * (10**decimals)) / 1 ether) *
+                stageTwoRate;
         } else if (stage == 3) {
-            calculatedTokens = weiPaid * (10 ** decimals) / 1 ether * stageThreeRate;
-        } 
+            calculatedTokens =
+                ((weiPaid * (10**decimals)) / 1 ether) *
+                stageThreeRate;
+        }
     }
 }
