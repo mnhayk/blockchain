@@ -16,7 +16,7 @@ const DappTokenCrowdsale = artifacts.require('DappTokenCrowdsale');
 // const RefundVault = artifacts.require('RefundVault');
 // const TokenTimelock = artifacts.require('TokenTimelock');
 
-contract('DappTokenCrowdsale', function ([_, wallet, investor1, investor2, foundersFund, foundationFund, partnersFund]) {
+contract.skip('DappTokenCrowdsale', function ([_, wallet, investor1, investor2, foundersFund, foundationFund, partnersFund]) {
 
   before(async function () {
     // Transfer extra ether to investor1's account for testing

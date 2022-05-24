@@ -10,7 +10,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract STMPToken is ERC20, ERC20Permit, ERC20Votes, Pausable, Ownable {
     // All existing token amount
-    uint256 public tokenAmount = 1000e6;
+    uint256 public tokenAmount = 1e27; // 1 miliard
 
     // The tokens already used for the presale buyers
     uint256 public tokensDistributedPresale = 0;
@@ -32,13 +32,17 @@ contract STMPToken is ERC20, ERC20Permit, ERC20Votes, Pausable, Ownable {
     /**
      * @param _name The distributed token name
      * @param _symbol The distributed token symbol
+     * @param _treasuryAddress The Treasury address
      */
-    constructor(string memory _name, string memory _symbol)
+    constructor(string memory _name, string memory _symbol, address _treasuryAddress)
         ERC20(_name, _symbol)
         ERC20Permit(_name)
     {
+        require(_treasuryAddress != address(0), "Treasury address is zero");
+        treasuryAddress = _treasuryAddress;
+
         _mint(treasuryAddress, tokenAmount);
-        _pause();
+        // _pause();
     }
 
     /**
@@ -46,7 +50,7 @@ contract STMPToken is ERC20, ERC20Permit, ERC20Votes, Pausable, Ownable {
      * @param _crowdsaleAddress The address of Crowdsale contract
      */
     function setCrowdsaleAddress(address _crowdsaleAddress) external onlyOwner {
-        require(_crowdsaleAddress != address(0));
+        require(_crowdsaleAddress != address(0), "Crowdsale address is zero");
         crowdsaleAddress = _crowdsaleAddress;
     }
 
@@ -59,11 +63,11 @@ contract STMPToken is ERC20, ERC20Permit, ERC20Votes, Pausable, Ownable {
         external
         onlyOwner
     {
-        require(_buyer != address(0));
-        require(_numberOfTokens > 0 && _numberOfTokens <= limitPresale);
+        require(_buyer != address(0), "Buyer address is zero");
+        require(_numberOfTokens > 0 && _numberOfTokens <= limitPresale, "Out of token limit");
 
         // Check that the limit of presale numberOfTokens hasn't been met yet
-        require(tokensDistributedPresale + _numberOfTokens <= limitPresale);
+        require(tokensDistributedPresale + _numberOfTokens <= limitPresale, "Existing token amount exceeded");
 
         tokensDistributedPresale += _numberOfTokens;
 
