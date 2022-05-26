@@ -196,4 +196,45 @@ contract("STMPToken", accounts => {
             );
         })
     })
+
+    describe('test pause() logic', async () => {
+        it('should success if owner called pause()', async function () {
+            // We should unpause() it first as token is pauased inside the constructor
+            await token.unpause({ from: owner })
+
+            await token.pause({ from: owner })
+            const isPaused = await token.paused()
+            assert.equal(isPaused, true)
+        })
+
+        it('should success if owner called unpause()', async function () {
+            // We can call unpause() as token is pauased inside the constructor
+            await token.unpause({ from: owner })
+
+            const isPaused = await token.paused()
+            assert.equal(isPaused, false)
+        })
+
+        it('should fail if not owner called pause()', async function () {
+            // We should unpause() it first as token is pauased inside the constructor
+            await token.unpause({ from: owner })
+
+            const notOwner = accounts[1]
+            await expectRevert(
+                token.pause({ from: notOwner }),
+                'Ownable: caller is not the owner'
+            );
+        })
+
+        it('should fail if not owner called unpause()', async function () {
+            const notOwner = accounts[1]
+            // We can try to unpause() it as token is pauased inside the constructor
+            await expectRevert(
+                token.unpause({ from: notOwner }),
+                'Ownable: caller is not the owner'
+            );
+        })
+    })
 })
+
+

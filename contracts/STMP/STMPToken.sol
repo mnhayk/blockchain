@@ -71,7 +71,6 @@ contract STMPToken is ERC20, ERC20Permit, ERC20Votes, Pausable, Ownable {
 
         tokensDistributedPresale += _numberOfTokens;
 
-        //TODO: Make sure treasury address approves contract to transfer
         transferFrom(treasuryAddress, _buyer, _numberOfTokens);
     }
 
@@ -86,14 +85,14 @@ contract STMPToken is ERC20, ERC20Permit, ERC20Votes, Pausable, Ownable {
     /**
      * @dev Pausing the token minting/approving/transfering. Only the owner can do this
      */
-    function puase() external onlyOwner {
+    function pause() external onlyOwner {
         _pause();
     }
 
     /**
      * @dev Unpausing the token minting/approving/transfering. Only the owner can do this
      */
-    function unpuase() external onlyOwner {
+    function unpause() external onlyOwner {
         _unpause();
     }
 
