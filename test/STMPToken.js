@@ -197,7 +197,7 @@ contract("STMPToken", accounts => {
         })
     })
 
-    describe('test pause() logic', async () => {
+    describe('test pause()/unpause() logic', async () => {
         it('should success if owner called pause()', async function () {
             // We should unpause() it first as token is pauased inside the constructor
             await token.unpause({ from: owner })
@@ -233,6 +233,64 @@ contract("STMPToken", accounts => {
                 token.unpause({ from: notOwner }),
                 'Ownable: caller is not the owner'
             );
+        })
+
+        it('should success if token is paused() and transfer is mady by owner', async function () {
+            const isPaused = await token.paused()
+            assert.equal(isPaused, true)
+
+            const numberOfTokens = toBN(web3.utils.toWei('20', 'ether'))
+            const tokenReceiver = accounts[6]
+            await token.approve(owner, numberOfTokens, { from: treasuryAddress })
+            await token.transferFrom(treasuryAddress, tokenReceiver, numberOfTokens,  { from: owner })
+
+            const receiverBalance = await token.balanceOf(tokenReceiver)
+            assert.equal(receiverBalance.toString(), numberOfTokens.toString())
+        })
+
+        it('should success if token is paused() and transfer is mady by crowdsale', async function () {
+            const isPaused = await token.paused()
+            assert.equal(isPaused, true)
+
+            const crowdsaleAddress = accounts[8]
+            await token.setCrowdsaleAddress(crowdsaleAddress)
+
+            const numberOfTokens = toBN(web3.utils.toWei('20', 'ether'))
+            const tokenReceiver = accounts[6]
+            await token.approve(crowdsaleAddress, numberOfTokens, { from: treasuryAddress })
+            await token.transferFrom(treasuryAddress, tokenReceiver, numberOfTokens, { from: crowdsaleAddress })
+
+            const receiverBalance = await token.balanceOf(tokenReceiver)
+            assert.equal(receiverBalance.toString(), numberOfTokens.toString())
+        })
+
+        it('should fail if token is paused() and transfer is not done by crowdsale/owner', async function () {
+            const isPaused = await token.paused()
+            assert.equal(isPaused, true)
+
+            const notCrowdalseNotOwner = accounts[8]
+            const numberOfTokens = toBN(web3.utils.toWei('20', 'ether'))
+            const tokenReceiver = accounts[6]
+            await token.approve(notCrowdalseNotOwner, numberOfTokens, { from: treasuryAddress })
+
+            await expectRevert(
+                token.transferFrom(treasuryAddress, tokenReceiver, numberOfTokens, { from: notCrowdalseNotOwner }),
+                'ERC20Pausable: token transfer while paused'
+            );
+        })
+
+        it('should success if token is unpaused() and transfer is not done by crowdsale/owner', async function () {
+            // We should unpause() it first as token is pauased inside the constructor
+            await token.unpause({ from: owner })
+
+            const notCrowdalseNotOwner = accounts[8]
+            const numberOfTokens = toBN(web3.utils.toWei('20', 'ether'))
+            const tokenReceiver = accounts[6]
+            await token.approve(notCrowdalseNotOwner, numberOfTokens, { from: treasuryAddress })
+            await token.transferFrom(treasuryAddress, tokenReceiver, numberOfTokens, { from: notCrowdalseNotOwner })
+
+            const receiverBalance = await token.balanceOf(tokenReceiver)
+            assert.equal(receiverBalance.toString(), numberOfTokens.toString())
         })
     })
 })
