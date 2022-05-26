@@ -10,7 +10,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract STMPToken is ERC20, ERC20Permit, ERC20Votes, Pausable, Ownable {
     // All existing token amount
-    uint256 public tokenAmount = 1e27; // 1 miliard
+    uint256 public tokenAmount = 1e27; // 1 billion
 
     // The tokens already used for the presale buyers
     uint256 public tokensDistributedPresale = 0;
@@ -42,7 +42,7 @@ contract STMPToken is ERC20, ERC20Permit, ERC20Votes, Pausable, Ownable {
         treasuryAddress = _treasuryAddress;
 
         _mint(treasuryAddress, tokenAmount);
-        // _pause();
+        _pause();
     }
 
     /**

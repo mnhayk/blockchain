@@ -1,6 +1,7 @@
 const STMPToken = artifacts.require("STMPToken")
 
-const { expectRevert, expectEvent, constants } = require('@openzeppelin/test-helpers')
+const { expectRevert, expectEvent, constants } = require('@openzeppelin/test-helpers');
+const ether = require('@openzeppelin/test-helpers/src/ether');
 const { web3 } = require('@openzeppelin/test-helpers/src/setup')
 const { assert } = require('chai')
 
@@ -65,13 +66,10 @@ contract("STMPToken", accounts => {
     })
 
     describe('constructor logic', async () => {
-        //TODO: Should be fixed
-        it.skip('should be minted correct amount of tokens', async function () {
-            expectEvent(token, 'Transfer', {
-                from: constants.ZERO_ADDRESS,
-                to: treasuryAddress,
-                amount: toBN(tokenAmount)
-            })
+        it('should be minted correct amount of tokens', async function () {
+            const amount = await token.tokenAmount()
+            const balance = await token.balanceOf(treasuryAddress)
+            assert.equal(amount.toString(), balance.toString())
         })
 
         it('should be token puased', async function () {
@@ -105,10 +103,48 @@ contract("STMPToken", accounts => {
     })
 
     describe('check distribution of Presale Tokens work', async () => {
+        it('should succeed if numberOfTokens is minimum 1', async function () {
+            const buyer = accounts[1]
+            const numberOfTokens = 1
+            await token.approve(owner, numberOfTokens, { from: treasuryAddress })
+            await token.distributePresaleTokens(buyer, numberOfTokens, { from: owner })
+
+            const balance = await token.balanceOf(buyer)
+            assert.equal(numberOfTokens.toString(), balance.toString())
+        })
+
+        it('should succeed if numberOfTokens is limitPresale', async function () {
+            const buyer = accounts[1]
+            const numberOfTokens = limitPresale
+            await token.approve(owner, numberOfTokens, { from: treasuryAddress })
+            await token.distributePresaleTokens(buyer, numberOfTokens, { from: owner })
+
+            const balance = await token.balanceOf(buyer)
+            assert.equal(numberOfTokens.toString(), balance.toString())
+        })
+
+        it('should sum distributed number of tokens', async function () {
+            const buyerOne = accounts[1]
+            const buyerOneNumberOfTokens = toBN(web3.utils.toWei('1', 'ether'))
+            await token.approve(owner, buyerOneNumberOfTokens, { from: treasuryAddress })
+            await token.distributePresaleTokens(buyerOne, buyerOneNumberOfTokens, { from: owner })
+
+            const buyerTwo = accounts[4]
+            const buyerTwoNumberOfTokens =toBN( web3.utils.toWei('1', 'ether'))
+            await token.approve(owner, buyerTwoNumberOfTokens, { from: treasuryAddress })
+            await token.distributePresaleTokens(buyerTwo, buyerTwoNumberOfTokens, { from: owner })
+
+            const totalNumberOfTokens = buyerOneNumberOfTokens.add(buyerTwoNumberOfTokens)
+            const distributedNumberOfTokens = await token.tokensDistributedPresale()
+
+            assert.equal(totalNumberOfTokens.toString(), distributedNumberOfTokens.toString())
+        })
+
         it('should revert in case of not owner', async function () {
             const buyer = accounts[3]
             const notOwner = accounts[1]
             const numberOfTokens = 1e6
+            await token.approve(owner, numberOfTokens, { from: treasuryAddress })
             await expectRevert(
                 token.distributePresaleTokens(buyer, numberOfTokens, { from: notOwner }),
                 'Ownable: caller is not the owner'
@@ -118,6 +154,7 @@ contract("STMPToken", accounts => {
         it('should revert in case of buyer is Zero', async function () {
             const buyer = constants.ZERO_ADDRESS
             const numberOfTokens = 1e6
+            await token.approve(owner, numberOfTokens, { from: treasuryAddress })
             await expectRevert(
                 token.distributePresaleTokens(buyer, numberOfTokens, { from: owner }),
                 'Buyer address is zero'
@@ -127,6 +164,7 @@ contract("STMPToken", accounts => {
         it('should revert if numberOfTokens is 0', async function () {
             const buyer = accounts[1]
             const numberOfTokens = 0
+            await token.approve(owner, numberOfTokens, { from: treasuryAddress })
             await expectRevert(
                 token.distributePresaleTokens(buyer, numberOfTokens, { from: owner }),
                 'Out of token limit'
@@ -136,26 +174,26 @@ contract("STMPToken", accounts => {
         it('should revert if numberOfTokens is bigger than limitPresale', async function () {
             const buyer = accounts[1]
             const numberOfTokens = toBN(limitPresale).add(toBN(1))
+            await token.approve(owner, numberOfTokens, { from: treasuryAddress })
             await expectRevert(
                 token.distributePresaleTokens(buyer, numberOfTokens, { from: owner }),
                 'Out of token limit'
             );
         })
 
-        //TODO: should be fixed
-        it.skip('should succeed if numberOfTokens is minimum 1e18', async function () {
-            const buyer = accounts[1]
-            const numberOfTokens = web3.utils.toWei('1', 'ether')
+        it('should revert if distributed number of tokens is bigger than limitPresale', async function () {
+            const buyerOne = accounts[1]
+            const buyerOneNumberOfTokens = limitPresale
+            await token.approve(owner, buyerOneNumberOfTokens, { from: treasuryAddress })
+            await token.distributePresaleTokens(buyerOne, buyerOneNumberOfTokens, { from: owner })
 
-            await token.approve(token.address, numberOfTokens, { from: treasuryAddress })
-
-            const balance = await token.balanceOf(treasuryAddress)
-            const allowance = await token.allowance(treasuryAddress, token.address)
-            
-            console.log(">>>>balance: ", balance.toString())
-            console.log(">>>>allowance: ", allowance.toString())
-
-            const receiptOne = await token.distributePresaleTokens(buyer, numberOfTokens, { from: owner })
+            const buyerTwo = accounts[4]
+            const buyerTwoNumberOfTokens = toBN(1)
+            await token.approve(owner, buyerTwoNumberOfTokens, { from: treasuryAddress })
+            await expectRevert(
+                token.distributePresaleTokens(buyerTwo, buyerTwoNumberOfTokens, { from: owner }),
+                'Existing token amount exceeded'
+            );
         })
     })
 })
