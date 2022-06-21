@@ -9,14 +9,14 @@ import "@openzeppelin/contracts/security/Pausable.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract STMPToken is ERC20, ERC20Permit, ERC20Votes, Pausable, Ownable {
-    //TODO: Make this values hardcoded
+    //TODO: Make this values hardcoded 
     // Presale opening time - 1 July 2022 00:00:00 GMT
     uint256 public presaleOpeningTime = 1656633600;
 
     // Presale closing time - 1 August 2022 00:00:00 GMT
     uint256 public presaleClosingTime = 1659312000; //TODO: should be clarified
 
-    // Crowdsale closing time - 1 October 2022 00:00:00 GMT
+    // Crowdsale closing time - 1 October 2022 00:ls00:00 GMT
     uint256 public crowdsaleClosingTime = 1664582400; //TODO: should be clarified
 
     // Crowdsale closing time - 2 October 2022 00:00:00 GMT
